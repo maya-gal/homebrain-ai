@@ -33,7 +33,7 @@ def render(is_demo_mode: bool) -> None:
     with col_clear:
         if st.button("✅  Clear Bought", use_container_width=True, type="secondary"):
             clear_bought()
-            st.toast("Cleared bought items!", icon="✓")
+            st.toast("Cleared bought items!", icon="✅")
             st.rerun()
 
     st.markdown("---")
@@ -48,7 +48,7 @@ def render(is_demo_mode: bool) -> None:
             submitted = st.form_submit_button("Add to List", type="primary", use_container_width=True)
             if submitted and item_name.strip():
                 add_to_shopping_list(item_name.strip(), category, quantity.strip() or "1")
-                st.toast(f"'{item_name}' added to shopping list!", icon="✓")
+                st.toast(f"'{item_name}' added to shopping list!", icon="✅")
                 st.rerun()
 
     # ── List ──────────────────────────────────────────────────

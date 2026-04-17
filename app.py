@@ -468,7 +468,7 @@ def page_mazava(user: str) -> None:
                     insert_items([{"product_name": name, "category": cat, "quantity": qty,
                                    "shelf_life_days": shelf, "confidence": "high"}],
                                  added_by=user, store_name=None)
-                    st.toast(f"'{name}' added!", icon="✓")
+                    st.toast(f"'{name}' added!", icon="✅")
                     st.rerun()
 
 
@@ -563,7 +563,7 @@ def page_running_low() -> None:
         with col_used:
             if st.button("✓ Mark Used", key=f"used_{item['id']}", use_container_width=True, type="primary"):
                 delete_item(item["id"], reason="used")
-                st.toast(f"'{item['product_name']}' marked as used.", icon="✓")
+                st.toast(f"'{item['product_name']}' marked as used.", icon="✅")
                 st.rerun()
 
         with col_shop:
