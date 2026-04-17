@@ -109,6 +109,15 @@ def get_usage_log_seed() -> list[dict]:
     ]
 
 
+MOCK_VOICE_TEXT_ITEMS = [
+    {"product_name": "Almond Milk",        "category": "Dairy",    "quantity": "1 liter",  "shelf_life_days": 10, "confidence": "high"},
+    {"product_name": "Whole Wheat Bread",  "category": "Bakery",   "quantity": "1 loaf",   "shelf_life_days": 5,  "confidence": "high"},
+    {"product_name": "Banana",             "category": "Produce",  "quantity": "6 count",  "shelf_life_days": 4,  "confidence": "high"},
+    {"product_name": "Natural Yogurt",     "category": "Dairy",    "quantity": "500g",     "shelf_life_days": 12, "confidence": "high"},
+    {"product_name": "Cherry Tomatoes",    "category": "Produce",  "quantity": "250g",     "shelf_life_days": 5,  "confidence": "high"},
+]
+
+
 def seed_usage_log(conn) -> None:
     """Insert demo usage log entries if the table is empty."""
     count = conn.execute("SELECT COUNT(*) FROM usage_log").fetchone()[0]

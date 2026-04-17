@@ -21,7 +21,7 @@ from components import (
     alert_card_html, prediction_card_html, section_title,
     status_badge, category_badge,
 )
-from demo_data import MOCK_RECEIPT_RESPONSE, MOCK_RECIPES, seed_usage_log
+from demo_data import MOCK_RECEIPT_RESPONSE, MOCK_RECIPES, MOCK_VOICE_TEXT_ITEMS, seed_usage_log
 import shopping_list as shopping_list_page
 
 # ── Bootstrap ─────────────────────────────────────────────────
@@ -275,60 +275,117 @@ CATEGORY_ICONS = {
     "Personal Care":"🧴", "Other":        "📦",
 }
 
+def _render_items_preview(items: list[dict], cache_key: str, user: str, store: str = None) -> None:
+    """Shared preview table + save button for all 3 input modes."""
+    if not items:
+        st.warning("לא זוהו מוצרים — נסה שוב.")
+        return
+    st.markdown(f"**{len(items)} מוצרים זוהו** — ערוך ושמור:")
+    cols_map = {"product_name": "מוצר", "category": "קטגוריה", "quantity": "כמות", "shelf_life_days": "ימי תפוגה"}
+    df = pd.DataFrame(items)[[c for c in cols_map if c in pd.DataFrame(items).columns]]
+    df = df.rename(columns=cols_map)
+    edited = st.data_editor(df, use_container_width=True, hide_index=True, key=f"preview_{cache_key}")
+    if st.button("✅ הוסף למזווה", type="primary", key=f"save_preview_{cache_key}"):
+        rev = {v: k for k, v in cols_map.items()}
+        save = edited.rename(columns=rev).to_dict("records")
+        for s in save:
+            s.setdefault("confidence", "high")
+        cnt = insert_items(save, added_by=user, store_name=store)
+        st.toast(f"🎉 {cnt} מוצרים נוספו למזווה!", icon="✅")
+        st.balloons()
+        for k in [cache_key, "mazava_text_items", "mazava_audio_items"]:
+            st.session_state.pop(k, None)
+        st.rerun()
+
+
 def page_mazava(user: str) -> None:
     page_header("🫙 מזווה", "כל המוצרים שלך — מסודרים על המדף, מעודכנים בזמן אמת.")
     demo_banner(is_demo())
 
-    # ── Upload receipt panel ──────────────────────────────────
-    with st.expander("📸  העלה חשבונית לעדכון מוצרים חסרים", expanded=False):
-        st.markdown('<div class="receipt-panel-title">סרוק חשבונית — הפריטים יתווספו למדף אוטומטית</div>', unsafe_allow_html=True)
+    # ── Add products panel — 3 modes ─────────────────────────
+    with st.expander("➕  הוסף מוצרים למזווה", expanded=False):
+        tab_receipt, tab_text, tab_voice = st.tabs(["📸 חשבונית", "✍️ כתיבה חופשית", "🎤 הקלטה קולית"])
 
-        up_col, hint_col = st.columns([1, 1], gap="large")
-        with up_col:
-            receipt_file = st.file_uploader("חשבונית", type=["jpg","jpeg","png","webp"], label_visibility="collapsed", key="mazava_upload")
-            use_demo_here = False
+        # ── TAB 1: Receipt image ──────────────────────────────
+        with tab_receipt:
+            receipt_file = st.file_uploader("חשבונית", type=["jpg","jpeg","png","webp"],
+                                             label_visibility="collapsed", key="mazava_upload")
             if is_demo():
-                use_demo_here = st.button("🎬 טען חשבונית דמו", key="mazava_demo")
+                if st.button("🎬 טען חשבונית דמו", key="mazava_demo"):
+                    st.session_state["mazava_receipt_key"] = "receipt_demo"
+                    st.session_state["receipt_demo"] = MOCK_RECEIPT_RESPONSE
 
-        with hint_col:
-            st.markdown("""
-            <div style="padding:1rem;background:#2A1508;border-radius:10px;border:1px dashed #5C3820;color:#A07850;font-size:0.82rem;margin-top:4px">
-                📄 העלה תמונה של חשבונית<br>
-                <span style="color:#6B4A30;font-size:0.75rem">JPG · PNG · WEBP</span>
-            </div>
-            """, unsafe_allow_html=True)
+            rkey = None
+            if receipt_file:
+                rkey = f"mazava_img_{receipt_file.name}_{receipt_file.size}"
+                if rkey not in st.session_state:
+                    with st.spinner("🔍 מנתח חשבונית..."):
+                        if is_demo():
+                            time.sleep(1); st.session_state[rkey] = MOCK_RECEIPT_RESPONSE
+                        else:
+                            from vision import analyze_receipt
+                            try: st.session_state[rkey] = analyze_receipt(receipt_file.getvalue(), get_api_key())
+                            except Exception as e: st.error(f"שגיאה: {e}")
+            elif "receipt_demo" in st.session_state:
+                rkey = "receipt_demo"
 
-        if receipt_file or use_demo_here:
-            rkey = f"mazava_{'demo' if use_demo_here else receipt_file.name + str(receipt_file.size)}"
-            if rkey not in st.session_state:
-                with st.spinner("🔍 מנתח חשבונית..."):
-                    if is_demo() or use_demo_here:
-                        time.sleep(1.2)
-                        st.session_state[rkey] = MOCK_RECEIPT_RESPONSE
+            if rkey and rkey in st.session_state:
+                _render_items_preview(st.session_state[rkey].get("items",[]), rkey, user,
+                                      store=st.session_state[rkey].get("store_name"))
+
+        # ── TAB 2: Free text ──────────────────────────────────
+        with tab_text:
+            st.markdown('<div style="font-size:0.82rem;color:#A07850;margin-bottom:8px">כתוב בחופשיות — בעברית או אנגלית, עם כמויות או בלי</div>', unsafe_allow_html=True)
+            example = "לדוגמה: חלב 2 ליטר, לחם, 6 ביצים, עגבניות, שמן זית"
+            text_input = st.text_area("רשימת מוצרים", placeholder=example,
+                                       height=100, label_visibility="collapsed", key="mazava_text")
+            c1, c2 = st.columns([2,1])
+            parse_text = c1.button("🔍 נתח טקסט", type="primary", key="parse_text_btn", use_container_width=True)
+            if is_demo():
+                c2.button("🎬 דמו", key="text_demo_btn", on_click=lambda: st.session_state.update({"mazava_text_items": MOCK_VOICE_TEXT_ITEMS}))
+
+            if parse_text and text_input.strip():
+                with st.spinner("מנתח..."):
+                    if is_demo():
+                        time.sleep(0.8); st.session_state["mazava_text_items"] = MOCK_VOICE_TEXT_ITEMS
                     else:
-                        from vision import analyze_receipt
-                        try:
-                            st.session_state[rkey] = analyze_receipt(receipt_file.getvalue(), get_api_key())
-                        except Exception as e:
-                            st.error(f"שגיאה: {e}")
+                        from vision import parse_text_to_items
+                        try: st.session_state["mazava_text_items"] = parse_text_to_items(text_input, get_api_key())
+                        except Exception as e: st.error(f"שגיאה: {e}")
 
-            if rkey in st.session_state:
-                rdata = st.session_state[rkey]
-                ritems = rdata.get("items", [])
-                if ritems:
-                    st.markdown(f"**{len(ritems)} מוצרים זוהו** מ-{rdata.get('store_name','חנות לא ידועה')} — אשר ושמור:")
-                    rdf = pd.DataFrame(ritems)[["product_name","category","quantity","shelf_life_days"]]
-                    rdf.columns = ["מוצר","קטגוריה","כמות","ימי תפוגה"]
-                    edited_r = st.data_editor(rdf, use_container_width=True, hide_index=True, key=f"re_{rkey}")
-                    if st.button("✅ הוסף למזווה", type="primary", key=f"save_{rkey}"):
-                        save = edited_r.rename(columns={"מוצר":"product_name","קטגוריה":"category","כמות":"quantity","ימי תפוגה":"shelf_life_days"}).to_dict("records")
-                        for s in save:
-                            s.setdefault("confidence","high")
-                        cnt = insert_items(save, added_by=user, store_name=rdata.get("store_name"))
-                        st.toast(f"🎉 {cnt} מוצרים נוספו למזווה!", icon="✅")
-                        st.balloons()
-                        del st.session_state[rkey]
-                        st.rerun()
+            if st.session_state.get("mazava_text_items"):
+                _render_items_preview(st.session_state["mazava_text_items"], "text_items", user)
+
+        # ── TAB 3: Voice ──────────────────────────────────────
+        with tab_voice:
+            st.markdown('<div style="font-size:0.82rem;color:#A07850;margin-bottom:12px">לחץ על המיקרופון, אמור את המוצרים בקול, לחץ שוב לעצור</div>', unsafe_allow_html=True)
+
+            try:
+                from audio_recorder_streamlit import audio_recorder
+                audio_bytes = audio_recorder(
+                    text="", icon_size="2x",
+                    recording_color="#C8945A", neutral_color="#5C3820",
+                    key="mazava_audio",
+                )
+            except Exception:
+                audio_bytes = None
+                st.info("רכיב ההקלטה לא זמין — נסה לרענן את הדף.")
+
+            if is_demo():
+                if st.button("🎬 דמו הקלטה", key="audio_demo_btn"):
+                    st.session_state["mazava_audio_items"] = MOCK_VOICE_TEXT_ITEMS
+
+            if audio_bytes and len(audio_bytes) > 1000:
+                with st.spinner("🎤 מעבד הקלטה..."):
+                    if is_demo():
+                        time.sleep(1); st.session_state["mazava_audio_items"] = MOCK_VOICE_TEXT_ITEMS
+                    else:
+                        from vision import parse_audio_to_items
+                        try: st.session_state["mazava_audio_items"] = parse_audio_to_items(audio_bytes, get_api_key())
+                        except Exception as e: st.error(f"שגיאה בעיבוד הקלטה: {e}")
+
+            if st.session_state.get("mazava_audio_items"):
+                _render_items_preview(st.session_state["mazava_audio_items"], "audio_items", user)
 
     # ── Stats strip ───────────────────────────────────────────
     all_items = get_all_items()
