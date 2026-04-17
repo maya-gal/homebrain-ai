@@ -5,7 +5,6 @@ Streamlit app: Receipt → Inventory → Meal Planning → Shopping List → Sma
 
 import os
 import time
-import sqlite3
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
@@ -53,23 +52,20 @@ PAGES = [
 ]
 
 
-# ── OpenAI client ─────────────────────────────────────────────
+# ── Gemini API key ────────────────────────────────────────────
 @st.cache_resource
-def get_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
+def get_api_key() -> str:
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
         try:
-            api_key = st.secrets.get("OPENAI_API_KEY", "")
+            key = st.secrets.get("GEMINI_API_KEY", "")
         except Exception:
-            api_key = ""
-    if not api_key:
-        return None
-    from openai import OpenAI
-    return OpenAI(api_key=api_key)
+            key = ""
+    return key or ""
 
 
 def is_demo() -> bool:
-    return get_openai_client() is None
+    return not get_api_key()
 
 
 # ── Sidebar ───────────────────────────────────────────────────
@@ -184,9 +180,9 @@ def page_scan_receipt(user: str) -> None:
             st.session_state[new_key] = MOCK_RECEIPT_RESPONSE
         else:
             from vision import analyze_receipt
-            with st.spinner("🔍 Sending to GPT-4o Vision…"):
+            with st.spinner("🔍 Sending to Gemini Vision…"):
                 try:
-                    result = analyze_receipt(uploaded.getvalue(), get_openai_client())
+                    result = analyze_receipt(uploaded.getvalue(), get_api_key())
                     st.session_state[new_key] = result
                 except Exception as e:
                     st.error(f"Analysis failed: {e}")
@@ -395,7 +391,7 @@ def page_meal_planner() -> None:
             else:
                 from planner import suggest_meals
                 try:
-                    st.session_state["recipes"] = suggest_meals(expiring, get_openai_client())
+                    st.session_state["recipes"] = suggest_meals(expiring, get_api_key())
                 except Exception as e:
                     st.error(f"Meal planner error: {e}")
                     return
