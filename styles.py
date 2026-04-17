@@ -285,5 +285,90 @@ section[data-testid="stSidebar"] .sidebar-divider {
 .stTextInput > div > div { border-radius: var(--radius-sm) !important; }
 .stSelectbox > div > div { border-radius: var(--radius-sm) !important; }
 div[data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 800 !important; }
+
+/* ── Pantry Shelf (מזווה) ─────────────────────────────────── */
+.pantry-unit {
+  background: #1C0F07;
+  border-radius: 16px;
+  padding: 20px 20px 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+}
+
+.shelf-row { margin-bottom: 6px; }
+
+.shelf-category-label {
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 1.5px;
+  text-transform: uppercase; color: #A07850;
+  margin-bottom: 8px; padding-left: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.shelf-items-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 10px 8px 14px; min-height: 90px;
+  align-items: flex-end;
+}
+
+.shelf-plank {
+  background: linear-gradient(180deg, #C8945A 0%, #9B6B3A 50%, #7A5228 100%);
+  height: 10px; border-radius: 3px;
+  box-shadow: 0 5px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.15);
+  margin-bottom: 20px;
+}
+
+/* Product tile on shelf */
+.product-tile {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 8px 8px;
+  width: 100px;
+  min-height: 88px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.1);
+  position: relative;
+  transition: transform .15s, box-shadow .15s;
+  cursor: default;
+  border-top: 3px solid #6366F1;
+}
+.product-tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.3);
+}
+.product-tile.status-low     { border-top-color: #FB923C; }
+.product-tile.status-expired { border-top-color: #EF4444; }
+.product-tile.status-soon    { border-top-color: #F59E0B; }
+.product-tile.status-fresh   { border-top-color: #10B981; }
+
+.product-tile .pt-icon  { font-size: 1.6rem; margin-bottom: 4px; line-height: 1; }
+.product-tile .pt-name  { font-size: 0.7rem; font-weight: 700; color: #0F172A; line-height: 1.2; }
+.product-tile .pt-qty   { font-size: 0.62rem; color: #94A3B8; margin-top: 3px; }
+.product-tile .pt-days  {
+  font-size: 0.62rem; font-weight: 700; margin-top: 5px;
+  padding: 2px 6px; border-radius: 99px;
+}
+.pt-days.fresh   { background: #D1FAE5; color: #065F46; }
+.pt-days.soon    { background: #FEF3C7; color: #92400E; }
+.pt-days.low     { background: #FEE4CC; color: #9A3412; }
+.pt-days.expired { background: #FEE2E2; color: #991B1B; }
+
+/* Empty shelf slot */
+.empty-shelf {
+  display: flex; align-items: center; justify-content: center;
+  width: 100px; height: 80px;
+  border: 2px dashed #3D2010; border-radius: 10px;
+  color: #5C3820; font-size: 0.7rem;
+}
+
+/* Receipt upload panel in מזווה */
+.receipt-panel {
+  background: #2A1508; border-radius: 12px;
+  padding: 1.25rem 1.5rem; margin-bottom: 1.25rem;
+  border: 1px solid #3D2010;
+}
+.receipt-panel-title {
+  font-size: 0.8rem; font-weight: 700; color: #C8945A;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+}
 </style>
 """

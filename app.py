@@ -44,7 +44,7 @@ st.markdown(get_css(), unsafe_allow_html=True)
 
 PAGES = [
     ("📸", "Scan Receipt"),
-    ("🏠", "Dashboard"),
+    ("🫙", "מזווה"),
     ("🛒", "Shopping List"),
     ("🍳", "Meal Planner"),
     ("⚠️", "Running Low"),
@@ -266,93 +266,153 @@ def page_scan_receipt(user: str) -> None:
             st.session_state["current_receipt_key"] = ""
 
 
-# ── Page: Dashboard ───────────────────────────────────────────
-def page_dashboard() -> None:
-    page_header("🏠 Family Dashboard", "Your complete household pantry — searchable, filterable, always up to date.")
+# ── Page: מזווה (Pantry Shelf) ────────────────────────────────
+
+CATEGORY_ICONS = {
+    "Produce":      "🥬", "Dairy":        "🥛", "Meat & Fish":  "🥩",
+    "Bakery":       "🍞", "Frozen":       "🧊", "Pantry":       "🫙",
+    "Beverages":    "🧃", "Snacks":       "🍪", "Household":    "🧹",
+    "Personal Care":"🧴", "Other":        "📦",
+}
+
+def page_mazava(user: str) -> None:
+    page_header("🫙 מזווה", "כל המוצרים שלך — מסודרים על המדף, מעודכנים בזמן אמת.")
     demo_banner(is_demo())
 
-    # Controls row
-    c_search, c_cat, c_view = st.columns([3, 2, 1])
-    query    = c_search.text_input("🔍 Search", placeholder="milk, produce…", label_visibility="collapsed")
-    cats     = ["All"] + get_categories()
-    category = c_cat.selectbox("Category", cats, label_visibility="collapsed")
-    view     = c_view.selectbox("View", ["Cards", "Table"], label_visibility="collapsed")
+    # ── Upload receipt panel ──────────────────────────────────
+    with st.expander("📸  העלה חשבונית לעדכון מוצרים חסרים", expanded=False):
+        st.markdown('<div class="receipt-panel-title">סרוק חשבונית — הפריטים יתווספו למדף אוטומטית</div>', unsafe_allow_html=True)
+
+        up_col, hint_col = st.columns([1, 1], gap="large")
+        with up_col:
+            receipt_file = st.file_uploader("חשבונית", type=["jpg","jpeg","png","webp"], label_visibility="collapsed", key="mazava_upload")
+            use_demo_here = False
+            if is_demo():
+                use_demo_here = st.button("🎬 טען חשבונית דמו", key="mazava_demo")
+
+        with hint_col:
+            st.markdown("""
+            <div style="padding:1rem;background:#2A1508;border-radius:10px;border:1px dashed #5C3820;color:#A07850;font-size:0.82rem;margin-top:4px">
+                📄 העלה תמונה של חשבונית<br>
+                <span style="color:#6B4A30;font-size:0.75rem">JPG · PNG · WEBP</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if receipt_file or use_demo_here:
+            rkey = f"mazava_{'demo' if use_demo_here else receipt_file.name + str(receipt_file.size)}"
+            if rkey not in st.session_state:
+                with st.spinner("🔍 מנתח חשבונית..."):
+                    if is_demo() or use_demo_here:
+                        time.sleep(1.2)
+                        st.session_state[rkey] = MOCK_RECEIPT_RESPONSE
+                    else:
+                        from vision import analyze_receipt
+                        try:
+                            st.session_state[rkey] = analyze_receipt(receipt_file.getvalue(), get_api_key())
+                        except Exception as e:
+                            st.error(f"שגיאה: {e}")
+
+            if rkey in st.session_state:
+                rdata = st.session_state[rkey]
+                ritems = rdata.get("items", [])
+                if ritems:
+                    st.markdown(f"**{len(ritems)} מוצרים זוהו** מ-{rdata.get('store_name','חנות לא ידועה')} — אשר ושמור:")
+                    rdf = pd.DataFrame(ritems)[["product_name","category","quantity","shelf_life_days"]]
+                    rdf.columns = ["מוצר","קטגוריה","כמות","ימי תפוגה"]
+                    edited_r = st.data_editor(rdf, use_container_width=True, hide_index=True, key=f"re_{rkey}")
+                    if st.button("✅ הוסף למזווה", type="primary", key=f"save_{rkey}"):
+                        save = edited_r.rename(columns={"מוצר":"product_name","קטגוריה":"category","כמות":"quantity","ימי תפוגה":"shelf_life_days"}).to_dict("records")
+                        for s in save:
+                            s.setdefault("confidence","high")
+                        cnt = insert_items(save, added_by=user, store_name=rdata.get("store_name"))
+                        st.toast(f"🎉 {cnt} מוצרים נוספו למזווה!", icon="✅")
+                        st.balloons()
+                        del st.session_state[rkey]
+                        st.rerun()
+
+    # ── Stats strip ───────────────────────────────────────────
+    all_items = get_all_items()
+    if not all_items:
+        st.markdown("""
+        <div style="text-align:center;padding:4rem 1rem">
+            <div style="font-size:3rem;margin-bottom:16px">🫙</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#C8945A">המזווה ריק</div>
+            <div style="font-size:0.85rem;color:#7A5228;margin-top:8px">העלה חשבונית מעל כדי להתחיל</div>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+
+    stats = get_stats()
+    hero_cards(stats)
+
+    # ── Search + filter ───────────────────────────────────────
+    sc1, sc2 = st.columns([3, 2])
+    query    = sc1.text_input("🔍 חיפוש", placeholder="חלב, קפואים...", label_visibility="collapsed")
+    cats     = ["הכל"] + get_categories()
+    cat_heb  = sc2.selectbox("קטגוריה", cats, label_visibility="collapsed")
+    category = "" if cat_heb == "הכל" else cat_heb
 
     items = search_items(query or "", category)
 
-    if not items:
-        st.info("Your pantry is empty — scan a receipt or load the demo to get started!")
-        return
+    # ── Shelf ─────────────────────────────────────────────────
+    by_category: dict[str, list] = {}
+    for item in items:
+        by_category.setdefault(item["category"], []).append(item)
 
-    stats = {
-        "total":         len(items),
-        "fresh":         sum(1 for i in items if i["status"] == "Fresh"),
-        "expiring_soon": sum(1 for i in items if i["status"] == "Running Low"),
-        "expired":       sum(1 for i in items if i["status"] == "Expired"),
-    }
-    hero_cards(stats)
+    st.markdown('<div class="pantry-unit">', unsafe_allow_html=True)
 
-    # Manual add expander
-    with st.expander("➕  Add item manually"):
-        CATS = ["Produce","Dairy","Meat & Fish","Bakery","Frozen","Pantry","Beverages","Snacks","Household","Personal Care","Other"]
-        with st.form("manual_add"):
-            mc1, mc2, mc3, mc4 = st.columns([3, 2, 2, 2])
-            name  = mc1.text_input("Product name")
-            cat   = mc2.selectbox("Category", CATS)
-            qty   = mc3.text_input("Quantity", value="1")
-            shelf = mc4.number_input("Shelf life (days)", min_value=1, value=7)
-            if st.form_submit_button("Add", type="primary"):
-                if name.strip():
-                    insert_items(
-                        [{"product_name": name, "category": cat, "quantity": qty,
-                          "shelf_life_days": shelf, "confidence": "high"}],
-                        added_by="You", store_name=None,
-                    )
-                    st.toast(f"'{name}' added!", icon="✓")
+    for cat, cat_items in by_category.items():
+        icon = CATEGORY_ICONS.get(cat, "📦")
+        st.markdown(f'<div class="shelf-category-label">{icon} &nbsp;{cat}</div>', unsafe_allow_html=True)
+
+        # Build tiles HTML
+        tiles_html = '<div class="shelf-items-row">'
+        for item in cat_items:
+            status_cls = {
+                "Fresh": "fresh", "Use Soon": "soon",
+                "Running Low": "low", "Expired": "expired",
+            }.get(item["status"], "fresh")
+            days_label = "פג" if item["days_remaining"] == 0 else f"{item['days_remaining']}י'"
+            short_name = item["product_name"][:18] + ("…" if len(item["product_name"]) > 18 else "")
+            tiles_html += f"""
+            <div class="product-tile status-{status_cls}" title="{item['product_name']} · {item['quantity']}">
+                <div class="pt-icon">{icon}</div>
+                <div class="pt-name">{short_name}</div>
+                <div class="pt-qty">{item['quantity']}</div>
+                <div class="pt-days {status_cls}">{days_label}</div>
+            </div>"""
+
+        tiles_html += "</div>"
+        st.markdown(tiles_html, unsafe_allow_html=True)
+        st.markdown('<div class="shelf-plank"></div>', unsafe_allow_html=True)
+
+        # Action buttons per item (below each shelf row)
+        btn_cols = st.columns(min(len(cat_items), 6))
+        for i, item in enumerate(cat_items[:6]):
+            with btn_cols[i]:
+                if st.button("🗑", key=f"sh_del_{item['id']}", help=f"הסר {item['product_name']}", use_container_width=True):
+                    delete_item(item["id"], reason="used")
+                    st.toast(f"'{item['product_name']}' הוסר", icon="🗑")
                     st.rerun()
 
-    st.markdown("---")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    if view == "Cards":
-        _render_card_grid(items)
-    else:
-        _render_table(items)
-
-
-def _render_card_grid(items: list[dict]) -> None:
-    cols = st.columns(3)
-    for i, item in enumerate(items):
-        with cols[i % 3]:
-            st.markdown(item_card_html(item), unsafe_allow_html=True)
-            col_del, col_shop = st.columns(2)
-            if col_del.button("🗑 Remove", key=f"del_{item['id']}", use_container_width=True):
-                delete_item(item["id"], reason="used")
-                st.toast(f"'{item['product_name']}' removed.", icon="🗑")
-                st.rerun()
-            if col_shop.button("🛒 Add to List", key=f"shop_{item['id']}", use_container_width=True):
-                add_to_shopping_list(item["product_name"], item["category"], item["quantity"])
-                st.toast(f"Added to shopping list!", icon="🛒")
-
-
-def _render_table(items: list[dict]) -> None:
-    df = pd.DataFrame(items)[["product_name","category","quantity","days_remaining","status","added_by","store_name"]]
-    df.columns = ["Product","Category","Quantity","Days Left","Status","Added By","Store"]
-
-    def colour(val):
-        return {
-            "Fresh":       "background:#D1FAE5;color:#065F46",
-            "Use Soon":    "background:#FEF3C7;color:#92400E",
-            "Running Low": "background:#FEE4CC;color:#9A3412",
-            "Expired":     "background:#FEE2E2;color:#991B1B",
-        }.get(val, "")
-
-    st.dataframe(df.style.applymap(colour, subset=["Status"]),
-                 use_container_width=True, hide_index=True)
-
-    with st.expander("📊 Category Breakdown"):
-        cat_df = df["Category"].value_counts().reset_index()
-        cat_df.columns = ["Category", "Count"]
-        st.bar_chart(cat_df.set_index("Category"))
+    # ── Manual add ────────────────────────────────────────────
+    with st.expander("➕ הוסף מוצר ידנית"):
+        CATS = ["Produce","Dairy","Meat & Fish","Bakery","Frozen","Pantry","Beverages","Snacks","Household","Personal Care","Other"]
+        with st.form("manual_add_maz"):
+            mc1, mc2, mc3, mc4 = st.columns([3, 2, 2, 2])
+            name  = mc1.text_input("שם מוצר")
+            cat   = mc2.selectbox("קטגוריה", CATS)
+            qty   = mc3.text_input("כמות", value="1")
+            shelf = mc4.number_input("ימי תפוגה", min_value=1, value=7)
+            if st.form_submit_button("הוסף", type="primary"):
+                if name.strip():
+                    insert_items([{"product_name": name, "category": cat, "quantity": qty,
+                                   "shelf_life_days": shelf, "confidence": "high"}],
+                                 added_by=user, store_name=None)
+                    st.toast(f"'{name}' נוסף!", icon="✓")
+                    st.rerun()
 
 
 # ── Page: Meal Planner ────────────────────────────────────────
@@ -542,8 +602,8 @@ def main():
 
     if page == "Scan Receipt":
         page_scan_receipt(user)
-    elif page == "Dashboard":
-        page_dashboard()
+    elif page == "מזווה":
+        page_mazava(user)
     elif page == "Shopping List":
         shopping_list_page.render(is_demo())
     elif page == "Meal Planner":
