@@ -649,7 +649,7 @@ def page_ai_predictions() -> None:
         df = pd.DataFrame(rows)
         def colour_priority(val):
             return "background:#FEE2E2;color:#991B1B" if val == "High" else "background:#FEF3C7;color:#92400E"
-        st.dataframe(df.style.applymap(colour_priority, subset=["Priority"]),
+        st.dataframe(df.style.map(colour_priority, subset=["Priority"]),
                      use_container_width=True, hide_index=True)
 
 
