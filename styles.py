@@ -10,22 +10,22 @@ def get_css() -> str:
 
 /* ── Reset & Base ─────────────────────────────────────────── */
 :root {
-  --primary:       #6366F1;
-  --primary-light: #EEF2FF;
-  --primary-dark:  #4F46E5;
-  --success:       #10B981;
-  --success-light: #D1FAE5;
-  --warning:       #F59E0B;
-  --warning-light: #FEF3C7;
-  --danger:        #EF4444;
-  --danger-light:  #FEE2E2;
-  --info:          #3B82F6;
-  --info-light:    #DBEAFE;
+  --primary:       #8B5E3C;
+  --primary-light: #F5EDE4;
+  --primary-dark:  #6B4226;
+  --success:       #6B8F5E;
+  --success-light: #DFF0D8;
+  --warning:       #C4903A;
+  --warning-light: #FDF3DC;
+  --danger:        #B85C4A;
+  --danger-light:  #FAE4E0;
+  --info:          #5A7FA8;
+  --info-light:    #DDEAF5;
   --surface:       #FFFFFF;
-  --bg:            #F1F5F9;
-  --border:        #E2E8F0;
-  --text:          #0F172A;
-  --muted:         #64748B;
+  --bg:            #FAF6F1;
+  --border:        #E8DDD3;
+  --text:          #2C1810;
+  --muted:         #8B7355;
   --radius:        12px;
   --radius-sm:     8px;
   --shadow:        0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
@@ -176,14 +176,14 @@ section[data-testid="stSidebar"] .sidebar-divider {
 
 /* ── Upload Zone ──────────────────────────────────────────── */
 .upload-zone {
-  border: 2px dashed #C7D2FE; border-radius: var(--radius);
+  border: 2px dashed #D4B99A; border-radius: var(--radius);
   padding: 3rem 2rem; text-align: center;
   background: var(--primary-light); transition: border-color .15s;
 }
 .upload-zone:hover { border-color: var(--primary); }
 .upload-icon { font-size: 2.5rem; margin-bottom: 12px; }
 .upload-text { font-size: 1rem; font-weight: 600; color: var(--primary); }
-.upload-sub  { font-size: 0.82rem; color: #818CF8; margin-top: 4px; }
+.upload-sub  { font-size: 0.82rem; color: #A07850; margin-top: 4px; }
 
 /* ── Wizard Steps ─────────────────────────────────────────── */
 .wizard-steps {
@@ -216,7 +216,7 @@ section[data-testid="stSidebar"] .sidebar-divider {
   border: 1px solid var(--border);
 }
 .recipe-header {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #8B5E3C 0%, #C4903A 100%);
   padding: 1.25rem 1.5rem; color: #fff;
 }
 .recipe-title { font-size: 1.15rem; font-weight: 700; color: #fff !important; margin: 0; }
@@ -278,7 +278,7 @@ section[data-testid="stSidebar"] .sidebar-divider {
   background: var(--primary-dark) !important;
   border-color: var(--primary-dark) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99,102,241,.35) !important;
+  box-shadow: 0 4px 12px rgba(139,94,60,.35) !important;
 }
 
 /* ── Streamlit widget overrides ───────────────────────────── */
@@ -286,7 +286,7 @@ section[data-testid="stSidebar"] .sidebar-divider {
 .stSelectbox > div > div { border-radius: var(--radius-sm) !important; }
 div[data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 800 !important; }
 
-/* ── Pantry Shelf (מזווה) ─────────────────────────────────── */
+/* ── Pantry Shelf ─────────────────────────────────────────── */
 .pantry-unit {
   background: #1C0F07;
   border-radius: 16px;
@@ -329,7 +329,7 @@ div[data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 80
   position: relative;
   transition: transform .15s, box-shadow .15s;
   cursor: default;
-  border-top: 3px solid #6366F1;
+  border-top: 3px solid #8B5E3C;
 }
 .product-tile:hover {
   transform: translateY(-5px);
@@ -360,7 +360,7 @@ div[data-testid="stMetricValue"] { font-size: 1.5rem !important; font-weight: 80
   color: #5C3820; font-size: 0.7rem;
 }
 
-/* Receipt upload panel in מזווה */
+/* Receipt upload panel in Pantry */
 .receipt-panel {
   background: #2A1508; border-radius: 12px;
   padding: 1.25rem 1.5rem; margin-bottom: 1.25rem;
