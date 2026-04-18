@@ -27,17 +27,30 @@ st.set_page_config(
 
 st.markdown(get_css(), unsafe_allow_html=True)
 
-API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("OPENAI_API_KEY")
-IS_DEMO = not bool(API_KEY)
+PAGES = [
+    ("📸", "Scan Receipt"),
+    ("🫙", "מזווה"),
+    ("🛒", "Shopping List"),
+    ("🍳", "Meal Planner"),
+    ("⚠️", "Running Low"),
+    ("🧠", "AI Predictions"),
+]
 
-PAGES = ["Dashboard", "Scan Receipt", "Meal Planner", "Running Low", "Shopping List"]
-PAGE_ICONS = {
-    "Dashboard":     "🏠",
-    "Scan Receipt":  "📄",
-    "Meal Planner":  "🍽",
-    "Running Low":   "⚠️",
-    "Shopping List": "🛒",
-}
+
+# ── OpenAI API key ────────────────────────────────────────────
+@st.cache_resource
+def get_api_key() -> str:
+    key = os.getenv("OPENAI_API_KEY")
+    if not key:
+        try:
+            key = st.secrets.get("OPENAI_API_KEY", "")
+        except Exception:
+            key = ""
+    return key or ""
+
+
+def is_demo() -> bool:
+    return not get_api_key()
 
 
 # ── Sidebar ───────────────────────────────────────────────────
@@ -59,6 +72,9 @@ def render_sidebar() -> tuple[str, str]:
         st.markdown("---")
 
         stats = get_stats()
+        st.markdown('<div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;color:#475569;text-transform:uppercase;margin-bottom:8px">מזווה Stats</div>', unsafe_allow_html=True)
+
+        warn_color = "danger" if stats["expiring_soon"] > 0 else ""
         st.markdown(f"""
         <div class="stat-pill">
             <span class="label">Total Items</span>
@@ -80,10 +96,268 @@ def render_sidebar() -> tuple[str, str]:
     return st.session_state.page, user
 
 
-# ── Dashboard Page ────────────────────────────────────────────
-def render_dashboard(user: str) -> None:
-    page_header("🏠 Family Dashboard", "Your household at a glance.")
-    demo_banner(IS_DEMO)
+# ── Page: Scan Receipt ────────────────────────────────────────
+def page_scan_receipt(user: str) -> None:
+    page_header("📸 Scan Receipt", "Upload a grocery receipt — AI extracts your inventory automatically. Zero typing required.")
+    demo_banner(is_demo())
+
+    # Determine wizard step
+    cache_key = st.session_state.get("current_receipt_key", "")
+    has_data  = cache_key and cache_key in st.session_state
+    step = 3 if has_data else 1
+
+    wizard_steps(step)
+
+    uploaded = st.file_uploader(
+        "Receipt image",
+        type=["jpg", "jpeg", "png", "webp"],
+        label_visibility="collapsed",
+    )
+
+    use_demo = False
+    if is_demo():
+        use_demo = st.button("🎬  Load Demo Receipt (Whole Foods · $67.43)", type="secondary")
+
+    if not uploaded and not use_demo:
+        upload_zone_hint()
+        return
+
+    # ── Analyze ───────────────────────────────────────────────
+    if uploaded:
+        new_key = f"receipt_{uploaded.name}_{uploaded.size}"
+    else:
+        new_key = "receipt_demo"
+
+    # Reset if a new file was uploaded
+    if new_key != st.session_state.get("current_receipt_key"):
+        st.session_state["current_receipt_key"] = new_key
+
+    if new_key not in st.session_state:
+        wizard_steps(2)  # Analyzing
+        if is_demo() or use_demo:
+            with st.spinner("🔍 GPT-4o Vision analyzing receipt…"):
+                time.sleep(1.5)
+            st.session_state[new_key] = MOCK_RECEIPT_RESPONSE
+        else:
+            from vision import analyze_receipt
+            with st.spinner("🔍 GPT-4o Vision analyzing receipt…"):
+                try:
+                    result = analyze_receipt(uploaded.getvalue(), get_api_key())
+                    st.session_state[new_key] = result
+                except Exception as e:
+                    st.error(f"Analysis failed: {e}")
+                    return
+
+    data  = st.session_state[new_key]
+    items = data.get("items", [])
+
+    if not items:
+        st.warning("No items found. Try a clearer image.")
+        return
+
+    # ── Review ────────────────────────────────────────────────
+    wizard_steps(3)
+
+    col_img, col_result = st.columns([1, 2], gap="large")
+
+    with col_img:
+        if uploaded:
+            st.image(uploaded, caption="Receipt", use_container_width=True)
+        else:
+            st.info("🎬 Demo: Whole Foods receipt data loaded")
+
+        # Meta chips
+        st.markdown(f"""
+        <div style="margin-top:12px">
+            <div class="badge badge-primary" style="margin-bottom:6px;display:block;width:fit-content">
+                🏪 {data.get('store_name') or 'Unknown store'}
+            </div>
+            <div class="badge badge-gray" style="margin-bottom:6px;display:block;width:fit-content">
+                📅 {data.get('purchase_date') or '—'}
+            </div>
+            <div class="badge badge-gray" style="display:block;width:fit-content">
+                💵 ${data.get('total_amount') or '—'}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_result:
+        # Summary
+        fresh_count = sum(1 for i in items if i["shelf_life_days"] > 5)
+        urgent_count = sum(1 for i in items if i["shelf_life_days"] <= 2)
+        st.markdown(f"""
+        <div style="display:flex;gap:12px;margin-bottom:1rem">
+            <div class="hero-card success" style="flex:1;min-width:0;padding:0.75rem 1rem">
+                <div class="hc-value" style="font-size:1.5rem">{fresh_count}</div>
+                <div class="hc-label">Fresh items</div>
+            </div>
+            <div class="hero-card {'danger' if urgent_count else 'primary'}" style="flex:1;min-width:0;padding:0.75rem 1rem">
+                <div class="hc-value" style="font-size:1.5rem">{urgent_count}</div>
+                <div class="hc-label">Use within 2 days</div>
+            </div>
+            <div class="hero-card primary" style="flex:1;min-width:0;padding:0.75rem 1rem">
+                <div class="hc-value" style="font-size:1.5rem">{len(items)}</div>
+                <div class="hc-label">Total extracted</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        section_title("REVIEW & EDIT BEFORE SAVING")
+        df = pd.DataFrame(items)[["product_name", "category", "quantity", "shelf_life_days", "confidence"]]
+        df.columns = ["Product", "Category", "Quantity", "Shelf Life (days)", "Confidence"]
+
+        edited = st.data_editor(
+            df, use_container_width=True, num_rows="dynamic",
+            hide_index=True, key=f"edit_{new_key}",
+        )
+
+        if st.button("✅  Save to מזווה", type="primary", use_container_width=True):
+            save_items = edited.rename(columns={
+                "Product": "product_name", "Category": "category",
+                "Quantity": "quantity", "Shelf Life (days)": "shelf_life_days",
+                "Confidence": "confidence",
+            }).to_dict("records")
+
+            count = insert_items(save_items, added_by=user, store_name=data.get("store_name"))
+            wizard_steps(4)
+            st.toast(f"🎉 {count} items saved to pantry by {user}!", icon="✅")
+            st.balloons()
+            del st.session_state[new_key]
+            st.session_state["current_receipt_key"] = ""
+
+
+# ── Page: Pantry (Shelf View) ────────────────────────────────
+
+CATEGORY_ICONS = {
+    "Produce":      "🥬", "Dairy":        "🥛", "Meat & Fish":  "🥩",
+    "Bakery":       "🍞", "Frozen":       "🧊", "מזווה":       "🫙",
+    "Beverages":    "🧃", "Snacks":       "🍪", "Household":    "🧹",
+    "Personal Care":"🧴", "Other":        "📦",
+}
+
+def _render_items_preview(items: list[dict], cache_key: str, user: str, store: str = None) -> None:
+    """Shared preview table + save button for all 3 input modes."""
+    if not items:
+        st.warning("No items detected — please try again.")
+        return
+    st.markdown(f"**{len(items)} items detected** — review and save:")
+    cols_map = {"product_name": "Product", "category": "Category", "quantity": "Quantity", "shelf_life_days": "Shelf Life (days)"}
+    df = pd.DataFrame(items)[[c for c in cols_map if c in pd.DataFrame(items).columns]]
+    df = df.rename(columns=cols_map)
+    edited = st.data_editor(df, use_container_width=True, hide_index=True, key=f"preview_{cache_key}")
+    if st.button("✅ Add to מזווה", type="primary", key=f"save_preview_{cache_key}"):
+        rev = {v: k for k, v in cols_map.items()}
+        save = edited.rename(columns=rev).to_dict("records")
+        for s in save:
+            s.setdefault("confidence", "high")
+        cnt = insert_items(save, added_by=user, store_name=store)
+        st.toast(f"🎉 {cnt} items added to מזווה!", icon="✅")
+        st.balloons()
+        for k in [cache_key, "mazava_text_items", "mazava_audio_items"]:
+            st.session_state.pop(k, None)
+        st.rerun()
+
+
+def page_mazava(user: str) -> None:
+    page_header("🫙 מזווה", "All your products — organised on the shelf, updated in real time.")
+    demo_banner(is_demo())
+
+    # ── Add products panel — 3 modes ─────────────────────────
+    with st.expander("➕  Add Products to מזווה", expanded=False):
+        tab_receipt, tab_text, tab_voice = st.tabs(["📸 Receipt", "✍️ Free Text", "🎤 Voice Recording"])
+
+        # ── TAB 1: Receipt image ──────────────────────────────
+        with tab_receipt:
+            receipt_file = st.file_uploader("Receipt", type=["jpg","jpeg","png","webp"],
+                                             label_visibility="collapsed", key="mazava_upload")
+            if is_demo():
+                if st.button("🎬 Load Demo Receipt", key="mazava_demo"):
+                    st.session_state["mazava_receipt_key"] = "receipt_demo"
+                    st.session_state["receipt_demo"] = MOCK_RECEIPT_RESPONSE
+
+            rkey = None
+            if receipt_file:
+                rkey = f"mazava_img_{receipt_file.name}_{receipt_file.size}"
+                if rkey not in st.session_state:
+                    with st.spinner("🔍 GPT-4o Vision analysing receipt..."):
+                        if is_demo():
+                            time.sleep(1); st.session_state[rkey] = MOCK_RECEIPT_RESPONSE
+                        else:
+                            from vision import analyze_receipt
+                            try: st.session_state[rkey] = analyze_receipt(receipt_file.getvalue(), get_api_key())
+                            except Exception as e: st.error(f"Error: {e}")
+            elif "receipt_demo" in st.session_state:
+                rkey = "receipt_demo"
+
+            if rkey and rkey in st.session_state:
+                _render_items_preview(st.session_state[rkey].get("items",[]), rkey, user,
+                                      store=st.session_state[rkey].get("store_name"))
+
+        # ── TAB 2: Free text ──────────────────────────────────
+        with tab_text:
+            st.markdown('<div style="font-size:0.82rem;color:#A07850;margin-bottom:8px">Write freely — in Hebrew or English, with quantities or without</div>', unsafe_allow_html=True)
+            example = "e.g. milk 2 liters, bread, 6 eggs, tomatoes, olive oil"
+            text_input = st.text_area("Product list", placeholder=example,
+                                       height=100, label_visibility="collapsed", key="mazava_text")
+            c1, c2 = st.columns([2,1])
+            parse_text = c1.button("🔍 Parse Text", type="primary", key="parse_text_btn", use_container_width=True)
+            if is_demo():
+                c2.button("🎬 Demo", key="text_demo_btn", on_click=lambda: st.session_state.update({"mazava_text_items": MOCK_VOICE_TEXT_ITEMS}))
+
+            if parse_text and text_input.strip():
+                with st.spinner("Parsing..."):
+                    if is_demo():
+                        time.sleep(0.8); st.session_state["mazava_text_items"] = MOCK_VOICE_TEXT_ITEMS
+                    else:
+                        from vision import parse_text_to_items
+                        try: st.session_state["mazava_text_items"] = parse_text_to_items(text_input, get_api_key())
+                        except Exception as e: st.error(f"Error: {e}")
+
+            if st.session_state.get("mazava_text_items"):
+                _render_items_preview(st.session_state["mazava_text_items"], "text_items", user)
+
+        # ── TAB 3: Voice ──────────────────────────────────────
+        with tab_voice:
+            st.markdown('<div style="font-size:0.82rem;color:#A07850;margin-bottom:12px">Click the microphone, say your products aloud, click again to stop</div>', unsafe_allow_html=True)
+
+            try:
+                from audio_recorder_streamlit import audio_recorder
+                audio_bytes = audio_recorder(
+                    text="", icon_size="2x",
+                    recording_color="#C8945A", neutral_color="#5C3820",
+                    key="mazava_audio",
+                )
+            except Exception:
+                audio_bytes = None
+                st.info("Recording component unavailable — try refreshing the page.")
+
+            if is_demo():
+                if st.button("🎬 Demo Recording", key="audio_demo_btn"):
+                    st.session_state["mazava_audio_items"] = MOCK_VOICE_TEXT_ITEMS
+
+            if audio_bytes and len(audio_bytes) > 1000:
+                with st.spinner("🎤 Processing recording..."):
+                    if is_demo():
+                        time.sleep(1); st.session_state["mazava_audio_items"] = MOCK_VOICE_TEXT_ITEMS
+                    else:
+                        from vision import parse_audio_to_items
+                        try: st.session_state["mazava_audio_items"] = parse_audio_to_items(audio_bytes, get_api_key())
+                        except Exception as e: st.error(f"Recording error: {e}")
+
+            if st.session_state.get("mazava_audio_items"):
+                _render_items_preview(st.session_state["mazava_audio_items"], "audio_items", user)
+
+    # ── Stats strip ───────────────────────────────────────────
+    all_items = get_all_items()
+    if not all_items:
+        st.markdown("""
+        <div style="text-align:center;padding:4rem 1rem">
+            <div style="font-size:3rem;margin-bottom:16px">🫙</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#C8945A">Your pantry is empty</div>
+            <div style="font-size:0.85rem;color:#7A5228;margin-top:8px">Upload a receipt above to get started</div>
+        </div>
+        """, unsafe_allow_html=True)
+        return
 
     stats = get_stats()
     hero_cards(stats)
@@ -161,22 +435,24 @@ def render_scan_receipt(user: str) -> None:
                             st.session_state.scan_step = 3
                             st.rerun()
 
-        with tab_text:
-            text_input = st.text_area(
-                "Type your grocery list",
-                placeholder="e.g. milk x2, bread, 6 eggs, tomatoes 1kg",
-                height=120,
-            )
-            if st.button("Parse List", type="primary", use_container_width=True) and text_input.strip():
-                if IS_DEMO:
-                    from demo_data import MOCK_VOICE_TEXT_ITEMS
-                    st.session_state.scan_items = MOCK_VOICE_TEXT_ITEMS
-                    st.session_state.scan_store = ""
-                    st.session_state.scan_step = 3
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── Manual add ────────────────────────────────────────────
+    with st.expander("➕ Add Item Manually"):
+        CATS = ["Produce","Dairy","Meat & Fish","Bakery","Frozen","מזווה","Beverages","Snacks","Household","Personal Care","Other"]
+        with st.form("manual_add_maz"):
+            mc1, mc2, mc3, mc4 = st.columns([3, 2, 2, 2])
+            name  = mc1.text_input("Product name")
+            cat   = mc2.selectbox("Category", CATS)
+            qty   = mc3.text_input("Quantity", value="1")
+            shelf = mc4.number_input("Shelf life (days)", min_value=1, value=7)
+            if st.form_submit_button("Add", type="primary"):
+                if name.strip():
+                    insert_items([{"product_name": name, "category": cat, "quantity": qty,
+                                   "shelf_life_days": shelf, "confidence": "high"}],
+                                 added_by=user, store_name=None)
+                    st.toast(f"'{name}' added!", icon="✅")
                     st.rerun()
-                else:
-                    with st.spinner("Parsing your list..."):
-                        from vision import parse_text_to_items
                         st.session_state.scan_items = parse_text_to_items(text_input, API_KEY)
                         st.session_state.scan_store = ""
                         st.session_state.scan_step = 3
@@ -296,17 +572,18 @@ def render_running_low() -> None:
 def main() -> None:
     page, user = render_sidebar()
 
-    if page == "Dashboard":
-        render_dashboard(user)
-    elif page == "Scan Receipt":
-        render_scan_receipt(user)
-    elif page == "Meal Planner":
-        render_meal_planner()
-    elif page == "Running Low":
-        render_running_low()
+    if page == "Scan Receipt":
+        page_scan_receipt(user)
+    elif page == "מזווה":
+        page_mazava(user)
     elif page == "Shopping List":
-        import shopping_list
-        shopping_list.render(IS_DEMO)
+        shopping_list_page.render(is_demo())
+    elif page == "Meal Planner":
+        page_meal_planner()
+    elif page == "Running Low":
+        page_running_low()
+    elif page == "AI Predictions":
+        page_ai_predictions()
 
 
 if __name__ == "__main__":
