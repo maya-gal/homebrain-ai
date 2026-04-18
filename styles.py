@@ -290,8 +290,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .item-card-top  { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
 .item-name {
   font-size: 0.92rem; font-weight: 800; color: var(--text);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Remove button fused to item card */
 [data-testid="element-container"]:has(.item-card) .item-card {
