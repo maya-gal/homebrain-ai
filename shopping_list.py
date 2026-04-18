@@ -11,7 +11,7 @@ from components import page_header, demo_banner, section_title, category_badge
 
 CATEGORIES = [
     "Produce", "Dairy", "Meat & Fish", "Bakery", "Frozen",
-    "מזווה", "Beverages", "Snacks", "Household", "Personal Care", "Other",
+    "Pantry", "Beverages", "Snacks", "Household", "Personal Care", "Other",
 ]
 
 
