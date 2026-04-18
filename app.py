@@ -61,12 +61,14 @@ def render_sidebar() -> tuple[str, str]:
         st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 
         if "page" not in st.session_state:
-            st.session_state.page = "Dashboard"
+            st.session_state.page = "Scan Receipt"
 
-        for page in PAGES:
-            icon = PAGE_ICONS[page]
-            if st.button(f"{icon}  {page}", key=f"nav_{page}", use_container_width=True):
-                st.session_state.page = page
+        for icon, label in PAGES:
+            active = st.session_state.page == label
+            if st.button(f"{icon}  {label}", key=f"nav_{label}",
+                         use_container_width=True,
+                         type="primary" if active else "secondary"):
+                st.session_state.page = label
                 st.rerun()
 
         st.markdown("---")
