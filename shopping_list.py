@@ -15,6 +15,15 @@ CATEGORIES = [
     "Pantry", "Beverages", "Snacks", "Household", "Personal Care", "Other",
 ]
 
+# Israeli supermarket price multipliers relative to a baseline basket
+_STORES = [
+    ("Rami Levy",   "🟢", 0.82),
+    ("Shufersal",   "🔵", 1.00),
+    ("Mega",        "🟡", 0.91),
+    ("Victory",     "🟠", 1.06),
+    ("AM:PM",       "🔴", 1.20),
+]
+
 
 def render(is_demo_mode: bool) -> None:
     page_header("🛒 Shopping List", "Auto-populated from your expiring items. Add more manually.")
@@ -70,9 +79,10 @@ def render(is_demo_mode: bool) -> None:
     bought  = [i for i in items if i["is_bought"]]
 
     # ── Price estimate banner ─────────────────────────────────
-    prices = get_price_estimates(items)
+    prices      = get_price_estimates(items)
     total_est   = sum(prices.get(i["item_name"].lower(), 0) for i in pending)
     bought_est  = sum(prices.get(i["item_name"].lower(), 0) for i in bought)
+
     st.markdown(f"""
     <div style="display:flex;gap:12px;margin-bottom:1.2rem;flex-wrap:wrap">
         <div style="background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;
@@ -94,6 +104,10 @@ def render(is_demo_mode: bool) -> None:
     </div>
     """, unsafe_allow_html=True)
 
+    # ── Store comparison ──────────────────────────────────────
+    if total_est > 0:
+        _render_store_comparison(total_est)
+
     # Pending items
     if pending:
         section_title(f"TO BUY — {len(pending)} ITEMS")
@@ -106,6 +120,43 @@ def render(is_demo_mode: bool) -> None:
         section_title(f"IN CART / BOUGHT — {len(bought)} ITEMS")
         for item in bought:
             _render_item_row(item, is_bought=True, price=prices.get(item["item_name"].lower()))
+
+
+def _render_store_comparison(total_est: float) -> None:
+    store_totals = [(name, dot, total_est * mult) for name, dot, mult in _STORES]
+    cheapest_price = min(t for _, _, t in store_totals)
+
+    cards_html = ""
+    for name, dot, price in store_totals:
+        is_cheapest = abs(price - cheapest_price) < 0.01
+        savings = total_est - price
+        border  = "2px solid #10B981" if is_cheapest else "1.5px solid #E5E7EB"
+        bg      = "#F0FDF4" if is_cheapest else "#FFFFFF"
+        badge   = '<span style="background:#10B981;color:#fff;font-size:0.6rem;font-weight:700;border-radius:4px;padding:2px 5px;margin-left:4px">CHEAPEST</span>' if is_cheapest else ""
+        saving_html = (
+            f'<div style="font-size:0.68rem;color:#10B981;font-weight:700;margin-top:2px">Save ${savings:.2f}</div>'
+            if is_cheapest else
+            f'<div style="font-size:0.68rem;color:#94A3B8;margin-top:2px">+${price - cheapest_price:.2f} more</div>'
+            if savings < 0 else
+            f'<div style="font-size:0.68rem;color:#94A3B8;margin-top:2px">Save ${savings:.2f}</div>'
+        )
+        cards_html += f"""
+        <div style="background:{bg};border:{border};border-radius:12px;padding:10px 14px;
+                    flex:1;min-width:100px;text-align:center">
+            <div style="font-size:0.78rem;font-weight:700;color:#1E1033;margin-bottom:3px">
+                {dot} {name}{badge}
+            </div>
+            <div style="font-size:1.1rem;font-weight:900;color:{'#10B981' if is_cheapest else '#1E1033'}">${price:.2f}</div>
+            {saving_html}
+        </div>"""
+
+    st.markdown(f"""
+    <div style="margin-bottom:1.4rem">
+        <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;color:#475569;
+                    text-transform:uppercase;margin-bottom:8px">🏪 STORE PRICE COMPARISON</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">{cards_html}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def _render_item_row(item: dict, is_bought: bool, price: float = None) -> None:

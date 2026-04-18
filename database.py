@@ -382,6 +382,32 @@ def remove_staple(staple_id: int) -> None:
         conn.commit()
 
 
+_CATEGORY_PRICE_DEFAULTS: dict[str, float] = {
+    "Produce": 3.50, "Dairy": 4.50, "Meat & Fish": 12.00,
+    "Bakery": 5.00, "Frozen": 7.00, "Pantry": 4.00,
+    "Beverages": 3.50, "Snacks": 3.00, "Household": 6.00,
+    "Personal Care": 8.00, "Other": 5.00,
+}
+
+
+def get_price_estimates(shopping_items: list[dict]) -> dict[str, float]:
+    """Return {item_name.lower(): estimated_price} using avg unit_price from inventory or category defaults."""
+    result: dict[str, float] = {}
+    with _conn() as conn:
+        for item in shopping_items:
+            name = item["item_name"].lower()
+            row = conn.execute(
+                "SELECT AVG(unit_price) FROM inventory WHERE LOWER(product_name)=? AND unit_price IS NOT NULL AND unit_price > 0",
+                (name,),
+            ).fetchone()
+            if row and row[0]:
+                result[name] = round(float(row[0]), 2)
+            else:
+                cat = item.get("category", "Other")
+                result[name] = _CATEGORY_PRICE_DEFAULTS.get(cat, 5.00)
+    return result
+
+
 def get_missing_staples() -> list[dict]:
     """Return staples that are not currently in the pantry (or all expired)."""
     staples = get_staple_list()
