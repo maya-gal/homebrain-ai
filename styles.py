@@ -276,7 +276,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   box-shadow: 0 4px 12px rgba(0,0,0,.08);
 }
 
-/* ── Item Cards ───────────────────────────────────────────── */
+/* ── Item Cards (kept for alert/prediction cards) ─────────── */
 .item-card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -286,31 +286,82 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   margin-bottom: 14px;
   transition: box-shadow .2s, transform .2s;
 }
-.item-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-.item-card-top {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
-}
+.item-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.item-card-top  { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
 .item-name { font-size: 0.95rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item-qty  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
 .item-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.item-prediction { font-size: 0.72rem; color: #7C3AED; background: #EDE9FE; border-radius: 6px; padding: 3px 8px; margin-top: 6px; display: inline-block; font-weight: 600; }
 
+/* ── Pantry Cards ─────────────────────────────────────────── */
+.pantry-card {
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  box-shadow: 0 2px 14px rgba(0,0,0,.07);
+  overflow: hidden;
+  margin-bottom: 0;
+  text-align: center;
+  transition: box-shadow .2s, transform .2s;
+}
+.pantry-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.13); transform: translateY(-2px); }
+.pc-img {
+  padding: 22px 20px 8px;
+  display: flex;
+  justify-content: center;
+}
+.pc-img .item-thumb {
+  width: 82px !important;
+  height: 82px !important;
+  font-size: 2.7rem !important;
+  margin: 0 auto;
+}
+.pc-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+  padding: 0 14px 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pc-qty { font-size: 0.75rem; color: var(--text-muted); padding: 0 14px 10px; }
+.pc-footer {
+  border-top: 1px solid #F1F5F9;
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.pc-expiry {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  letter-spacing: .01em;
+}
+.pc-expiry.fresh   { background:#D1FAE5; color:#065F46; }
+.pc-expiry.soon    { background:#FEF3C7; color:#92400E; }
+.pc-expiry.low     { background:#FEE2E2; color:#991B1B; }
+.pc-expiry.expired { background:#F3F4F6; color:#6B7280; }
+.pc-pred { font-size: 0.7rem; color: #7C3AED; font-weight: 600; }
 
-.item-prediction {
-  font-size: 0.72rem;
-  color: #7C3AED;
-  background: #EDE9FE;
-  border-radius: 6px;
-  padding: 3px 8px;
-  margin-top: 6px;
-  display: inline-block;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+/* Remove button fused below pantry card */
+[data-testid="stMarkdownContainer"]:has(.pantry-card) + [data-testid="stButton"] > button {
+  border-radius: 0 0 16px 16px !important;
+  border-top: none !important;
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+  background: #FFF5F5 !important;
+  color: #DC2626 !important;
+  border: 1px solid var(--border) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+[data-testid="stMarkdownContainer"]:has(.pantry-card) + [data-testid="stButton"] > button:hover {
+  background: #FEE2E2 !important;
 }
 
 /* ── Shelf Life Bar ───────────────────────────────────────── */

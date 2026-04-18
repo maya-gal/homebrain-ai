@@ -237,6 +237,31 @@ def prediction_card_html(pred: dict) -> str:
     </div>"""
 
 
+# ── Pantry Card ───────────────────────────────────────────────
+def pantry_card_html(item: dict, prediction: str = "") -> str:
+    img_html = get_product_image(item['product_name'], item['category'])
+    days = item['days_remaining']
+    if days <= 0:
+        expiry_cls, expiry_text = "expired", "Expired"
+    elif days <= 2:
+        expiry_cls, expiry_text = "low", f"⚠ {days}d left"
+    elif days <= 5:
+        expiry_cls, expiry_text = "soon", f"⏳ {days}d left"
+    else:
+        expiry_cls, expiry_text = "fresh", f"✅ {days}d left"
+    pred_html = f'<div class="pc-pred">🔮 {prediction}</div>' if prediction else ""
+    return f"""
+    <div class="pantry-card">
+        <div class="pc-img">{img_html}</div>
+        <div class="pc-name">{item['product_name']}</div>
+        <div class="pc-qty">{item['quantity']}</div>
+        <div class="pc-footer">
+            <span class="pc-expiry {expiry_cls}">{expiry_text}</span>
+            {pred_html}
+        </div>
+    </div>"""
+
+
 # ── Section Title ─────────────────────────────────────────────
 def section_title(text: str) -> None:
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)

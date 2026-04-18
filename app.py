@@ -16,7 +16,7 @@ from database import (
 from product_images import get_product_image
 from components import (
     page_header, demo_banner, hero_cards, wizard_steps,
-    item_card_html, recipe_card, upload_zone_hint,
+    item_card_html, pantry_card_html, recipe_card, upload_zone_hint,
     alert_card_html, prediction_card_html, section_title,
     status_badge, category_badge,
 )
@@ -446,8 +446,8 @@ def page_mazava(user: str) -> None:
     for i, item in enumerate(in_stock_items):
         with cols[i % 3]:
             pred = predictions.get(item["product_name"].lower(), "")
-            st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
-            if st.button("Remove", key=f"del_{item['id']}", use_container_width=True):
+            st.markdown(pantry_card_html(item, prediction=pred), unsafe_allow_html=True)
+            if st.button("🗑️ Remove", key=f"del_{item['id']}", use_container_width=True):
                 delete_item(item["id"])
                 st.rerun()
 
