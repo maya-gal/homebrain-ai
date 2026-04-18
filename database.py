@@ -282,6 +282,51 @@ def get_smart_predictions() -> list[dict]:
     return predictions[:8]  # Cap at 8 predictions
 
 
+def get_inventory_predictions() -> dict[str, str]:
+    """Returns {product_name.lower(): prediction_text} for items currently in inventory.
+    Shows shelf-life countdown and purchase-frequency hint when history is available."""
+    items = get_all_items()
+    if not items:
+        return {}
+
+    with _conn() as conn:
+        buys = conn.execute(
+            "SELECT product_name, action_date FROM usage_log WHERE action='bought' ORDER BY action_date ASC"
+        ).fetchall()
+
+    by_product: dict[str, list[date]] = defaultdict(list)
+    for row in buys:
+        try:
+            d = date.fromisoformat(row["action_date"])
+            by_product[row["product_name"].lower()].append(d)
+        except ValueError:
+            continue
+
+    predictions: dict[str, str] = {}
+    for item in items:
+        name_lower = item["product_name"].lower()
+        days = item["days_remaining"]
+
+        parts = []
+        if days <= 0:
+            parts.append("Expired")
+        elif days <= 5:
+            unit = "day" if days == 1 else "days"
+            parts.append(f"Runs out in {days} {unit}")
+
+        dates = sorted(by_product.get(name_lower, []))
+        if len(dates) >= 2:
+            gaps = [(dates[i + 1] - dates[i]).days for i in range(len(dates) - 1)]
+            avg_gap = round(sum(gaps) / len(gaps))
+            if avg_gap > 0:
+                parts.append(f"you buy every ~{avg_gap}d")
+
+        if parts:
+            predictions[name_lower] = " · ".join(parts)
+
+    return predictions
+
+
 # ── Staple List ───────────────────────────────────────────────
 
 def get_staple_list() -> list[dict]:

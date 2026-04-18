@@ -299,6 +299,17 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .item-name { font-size: 0.95rem; font-weight: 800; color: var(--text); }
 .item-qty  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
 .item-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.item-prediction {
+  font-size: 0.72rem;
+  color: #7C3AED;
+  background: #EDE9FE;
+  border-radius: 6px;
+  padding: 3px 8px;
+  margin-top: 6px;
+  display: inline-block;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
 
 /* ── Shelf Life Bar ───────────────────────────────────────── */
 .shelf-bar-bg {

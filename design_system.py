@@ -33,4 +33,3 @@ def item_card(product_name: str, quantity: int, status: str, expiry_date: str):
     """, unsafe_allow_html=True)
 
 # Additional components can be defined here...
-"""

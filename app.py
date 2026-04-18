@@ -1,12 +1,16 @@
 import os
+import time
 import streamlit as st
+import pandas as pd
 from dotenv import load_dotenv
+from demo_data import MOCK_RECEIPT_RESPONSE, MOCK_RECIPES, MOCK_VOICE_TEXT_ITEMS
+import shopping_list as shopping_list_page
 
 from styles import get_css
 from database import (
     init_db, insert_items, get_all_items, search_items,
     get_expiring_items, get_categories, get_stats, delete_item,
-    add_to_shopping_list, get_smart_predictions,
+    add_to_shopping_list, get_smart_predictions, get_inventory_predictions,
     get_staple_list, add_staple, remove_staple, get_missing_staples,
 )
 from product_images import get_product_image
@@ -34,7 +38,6 @@ PAGES = [
     ("🛒", "Shopping List"),
     ("🍳", "Meal Planner"),
     ("⚠️", "Running Low"),
-    ("🧠", "AI Predictions"),
 ]
 
 
@@ -368,7 +371,7 @@ def page_mazava(user: str) -> None:
     hero_cards(stats, missing=len(missing_staples))
 
     # ── Staple List ───────────────────────────────────────────
-    with st.expander(f"📋  My Staple List  {'🔴 ' + str(len(missing_staples)) + ' missing' if missing_staples else '✅ all stocked'}", expanded=bool(missing_staples)):
+    with st.expander(f"✅  Must Have  {'🔴 ' + str(len(missing_staples)) + ' missing' if missing_staples else '✅ all stocked'}", expanded=bool(missing_staples)):
         if missing_staples:
             section_title(f"MISSING FROM PANTRY — {len(missing_staples)} ITEMS")
             for s in missing_staples:
@@ -387,7 +390,7 @@ def page_mazava(user: str) -> None:
         all_staples = get_staple_list()
         in_stock = [s for s in all_staples if s["product_name"].lower() not in {x["product_name"].lower() for x in missing_staples}]
         if in_stock:
-            section_title(f"IN STOCK — {len(in_stock)} STAPLES")
+            section_title(f"IN STOCK — {len(in_stock)} MUST HAVE ITEMS")
             cols = st.columns(4)
             for i, s in enumerate(in_stock):
                 with cols[i % 4]:
@@ -399,13 +402,13 @@ def page_mazava(user: str) -> None:
                         st.rerun()
 
         with st.form("add_staple_form", clear_on_submit=True):
-            section_title("ADD TO STAPLE LIST")
+            section_title("ADD TO MUST HAVE")
             sc1, sc2, sc3 = st.columns([3, 2, 1])
             s_name = sc1.text_input("Product", placeholder="e.g. Milk, Eggs, Bread…", label_visibility="collapsed")
             s_cat  = sc2.selectbox("Category", ["Produce","Dairy","Meat & Fish","Bakery","Frozen","Pantry","Beverages","Snacks","Household","Personal Care","Other"], label_visibility="collapsed")
             if sc3.form_submit_button("➕ Add", use_container_width=True, type="primary") and s_name.strip():
                 added = add_staple(s_name.strip(), s_cat)
-                st.toast(f"'{s_name}' added to staple list!" if added else f"'{s_name}' is already in your staple list.", icon="📋")
+                st.toast(f"'{s_name}' added to Must Have!" if added else f"'{s_name}' is already in Must Have.", icon="✅")
                 st.rerun()
 
     col_search, col_cat = st.columns([3, 1])
@@ -426,14 +429,68 @@ def page_mazava(user: str) -> None:
         st.info("No items in your food yet. Scan a receipt to get started!")
         return
 
-    section_title(f"FOOD — {len(items)} ITEMS")
+    # Separate in-stock vs zero-quantity items
+    def _is_zero_qty(qty: str) -> bool:
+        try:
+            return float(qty.split()[0]) == 0
+        except (ValueError, IndexError):
+            return qty.strip() == "0"
+
+    in_stock_items  = [it for it in items if not _is_zero_qty(it["quantity"])]
+    out_of_stock    = [it for it in items if _is_zero_qty(it["quantity"])]
+
+    # Fetch AI predictions for inline display
+    predictions = get_inventory_predictions()
+
+    section_title(f"FOOD — {len(in_stock_items)} ITEMS")
     cols = st.columns(3)
-    for i, item in enumerate(items):
+    for i, item in enumerate(in_stock_items):
         with cols[i % 3]:
-            st.markdown(item_card_html(item), unsafe_allow_html=True)
+            pred = predictions.get(item["product_name"].lower(), "")
+            st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
             if st.button("Remove", key=f"del_{item['id']}", use_container_width=True):
                 delete_item(item["id"])
                 st.rerun()
+
+    # ── Out of Stock ──────────────────────────────────────────
+    if out_of_stock:
+        st.markdown("<br>", unsafe_allow_html=True)
+        section_title(f"OUT OF STOCK — {len(out_of_stock)} ITEMS")
+        st.markdown("""
+        <div style="font-size:0.8rem;color:#6B7280;margin-bottom:12px">
+            Items with quantity set to 0 — add them to your shopping list.
+        </div>
+        """, unsafe_allow_html=True)
+        oos_cols = st.columns(3)
+        for i, item in enumerate(out_of_stock):
+            with oos_cols[i % 3]:
+                img_url = get_product_image(item["product_name"], item["category"])
+                img_tag = (
+                    f'<img src="{img_url}" style="width:36px;height:36px;border-radius:8px;'
+                    f'object-fit:cover;vertical-align:middle;margin-right:8px;opacity:0.5" '
+                    f'onerror="this.style.display=\'none\'">'
+                    if img_url else ""
+                )
+                st.markdown(f"""
+                <div style="background:#F9FAFB;border:1.5px dashed #D1D5DB;border-radius:12px;
+                            padding:12px 14px;margin-bottom:10px;opacity:0.85">
+                    <div style="display:flex;align-items:center;margin-bottom:6px">
+                        {img_tag}
+                        <div>
+                            <div style="font-weight:700;font-size:0.9rem;color:#374151">{item['product_name']}</div>
+                            <div style="font-size:0.75rem;color:#9CA3AF">{item['category']}</div>
+                        </div>
+                    </div>
+                    <span class="badge badge-gray">Out of Stock</span>
+                </div>
+                """, unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
+                if c1.button("🛒 Add to List", key=f"oos_shop_{item['id']}", use_container_width=True):
+                    add_to_shopping_list(item["product_name"], item["category"])
+                    st.toast(f"'{item['product_name']}' added to shopping list!", icon="🛒")
+                if c2.button("Remove", key=f"oos_del_{item['id']}", use_container_width=True):
+                    delete_item(item["id"])
+                    st.rerun()
 
 
 # ── Page: Meal Planner ────────────────────────────────────────
