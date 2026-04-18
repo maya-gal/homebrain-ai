@@ -44,7 +44,7 @@ st.markdown(get_css(), unsafe_allow_html=True)
 
 PAGES = [
     ("📸", "Scan Receipt"),
-    ("🫙", "Pantry"),
+    ("🫙", "מזווה"),
     ("🛒", "Shopping List"),
     ("🍳", "Meal Planner"),
     ("⚠️", "Running Low"),
@@ -52,13 +52,13 @@ PAGES = [
 ]
 
 
-# ── Gemini API key ────────────────────────────────────────────
+# ── OpenAI API key ────────────────────────────────────────────
 @st.cache_resource
 def get_api_key() -> str:
-    key = os.getenv("GEMINI_API_KEY")
+    key = os.getenv("OPENAI_API_KEY")
     if not key:
         try:
-            key = st.secrets.get("GEMINI_API_KEY", "")
+            key = st.secrets.get("OPENAI_API_KEY", "")
         except Exception:
             key = ""
     return key or ""
@@ -108,7 +108,7 @@ def render_sidebar() -> tuple[str, str]:
 
         # Live stats
         stats = get_stats()
-        st.markdown('<div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;color:#475569;text-transform:uppercase;margin-bottom:8px">Pantry Stats</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;color:#475569;text-transform:uppercase;margin-bottom:8px">מזווה Stats</div>', unsafe_allow_html=True)
 
         warn_color = "danger" if stats["expiring_soon"] > 0 else ""
         st.markdown(f"""
@@ -180,7 +180,7 @@ def page_scan_receipt(user: str) -> None:
             st.session_state[new_key] = MOCK_RECEIPT_RESPONSE
         else:
             from vision import analyze_receipt
-            with st.spinner("🔍 Sending to Gemini Vision…"):
+            with st.spinner("🔍 GPT-4o Vision analyzing receipt…"):
                 try:
                     result = analyze_receipt(uploaded.getvalue(), get_api_key())
                     st.session_state[new_key] = result
@@ -251,7 +251,7 @@ def page_scan_receipt(user: str) -> None:
             hide_index=True, key=f"edit_{new_key}",
         )
 
-        if st.button("✅  Save to Pantry", type="primary", use_container_width=True):
+        if st.button("✅  Save to מזווה", type="primary", use_container_width=True):
             save_items = edited.rename(columns={
                 "Product": "product_name", "Category": "category",
                 "Quantity": "quantity", "Shelf Life (days)": "shelf_life_days",
@@ -270,7 +270,7 @@ def page_scan_receipt(user: str) -> None:
 
 CATEGORY_ICONS = {
     "Produce":      "🥬", "Dairy":        "🥛", "Meat & Fish":  "🥩",
-    "Bakery":       "🍞", "Frozen":       "🧊", "Pantry":       "🫙",
+    "Bakery":       "🍞", "Frozen":       "🧊", "מזווה":       "🫙",
     "Beverages":    "🧃", "Snacks":       "🍪", "Household":    "🧹",
     "Personal Care":"🧴", "Other":        "📦",
 }
@@ -285,13 +285,13 @@ def _render_items_preview(items: list[dict], cache_key: str, user: str, store: s
     df = pd.DataFrame(items)[[c for c in cols_map if c in pd.DataFrame(items).columns]]
     df = df.rename(columns=cols_map)
     edited = st.data_editor(df, use_container_width=True, hide_index=True, key=f"preview_{cache_key}")
-    if st.button("✅ Add to Pantry", type="primary", key=f"save_preview_{cache_key}"):
+    if st.button("✅ Add to מזווה", type="primary", key=f"save_preview_{cache_key}"):
         rev = {v: k for k, v in cols_map.items()}
         save = edited.rename(columns=rev).to_dict("records")
         for s in save:
             s.setdefault("confidence", "high")
         cnt = insert_items(save, added_by=user, store_name=store)
-        st.toast(f"🎉 {cnt} items added to Pantry!", icon="✅")
+        st.toast(f"🎉 {cnt} items added to מזווה!", icon="✅")
         st.balloons()
         for k in [cache_key, "mazava_text_items", "mazava_audio_items"]:
             st.session_state.pop(k, None)
@@ -299,11 +299,11 @@ def _render_items_preview(items: list[dict], cache_key: str, user: str, store: s
 
 
 def page_mazava(user: str) -> None:
-    page_header("🫙 Pantry", "All your products — organised on the shelf, updated in real time.")
+    page_header("🫙 מזווה", "All your products — organised on the shelf, updated in real time.")
     demo_banner(is_demo())
 
     # ── Add products panel — 3 modes ─────────────────────────
-    with st.expander("➕  Add Products to Pantry", expanded=False):
+    with st.expander("➕  Add Products to מזווה", expanded=False):
         tab_receipt, tab_text, tab_voice = st.tabs(["📸 Receipt", "✍️ Free Text", "🎤 Voice Recording"])
 
         # ── TAB 1: Receipt image ──────────────────────────────
@@ -319,7 +319,7 @@ def page_mazava(user: str) -> None:
             if receipt_file:
                 rkey = f"mazava_img_{receipt_file.name}_{receipt_file.size}"
                 if rkey not in st.session_state:
-                    with st.spinner("🔍 Analysing receipt..."):
+                    with st.spinner("🔍 GPT-4o Vision analysing receipt..."):
                         if is_demo():
                             time.sleep(1); st.session_state[rkey] = MOCK_RECEIPT_RESPONSE
                         else:
@@ -456,7 +456,7 @@ def page_mazava(user: str) -> None:
 
     # ── Manual add ────────────────────────────────────────────
     with st.expander("➕ Add Item Manually"):
-        CATS = ["Produce","Dairy","Meat & Fish","Bakery","Frozen","Pantry","Beverages","Snacks","Household","Personal Care","Other"]
+        CATS = ["Produce","Dairy","Meat & Fish","Bakery","Frozen","מזווה","Beverages","Snacks","Household","Personal Care","Other"]
         with st.form("manual_add_maz"):
             mc1, mc2, mc3, mc4 = st.columns([3, 2, 2, 2])
             name  = mc1.text_input("Product name")
@@ -659,7 +659,7 @@ def main():
 
     if page == "Scan Receipt":
         page_scan_receipt(user)
-    elif page == "Pantry":
+    elif page == "מזווה":
         page_mazava(user)
     elif page == "Shopping List":
         shopping_list_page.render(is_demo())

@@ -5,9 +5,8 @@ Three modes: receipt image, free text, voice recording.
 
 import json
 import io
-from PIL import Image
-from google import genai
-from google.genai import types
+import base64
+from openai import OpenAI
 
 # ── Shared shelf-life + category rules (reused across all prompts) ──────────
 _SHARED_RULES = """
@@ -26,7 +25,7 @@ SHELF LIFE ESTIMATION RULES:
 - Snacks: 30–90 days
 
 CATEGORY TAXONOMY — use ONLY these values:
-Produce | Dairy | Meat & Fish | Bakery | Frozen | Pantry | Beverages | Snacks | Household | Personal Care | Other
+Produce | Dairy | Meat & Fish | Bakery | Frozen | מזווה | Beverages | Snacks | Household | Personal Care | Other
 
 OUTPUT SCHEMA (return ONLY this JSON, nothing else):
 {
@@ -49,6 +48,7 @@ Analyze the receipt image and extract every purchased item.
 {_SHARED_RULES}
 Also extract: "store_name", "purchase_date" (YYYY-MM-DD), "total_amount" (float), "currency".
 Add those fields at the top level of the JSON alongside "items".
+Infer shelf_life_days from the product type — do NOT read expiry dates from the receipt.
 """.strip()
 
 # ── Free text prompt ─────────────────────────────────────────────────────────
@@ -60,25 +60,18 @@ Extract each product with its quantity (infer if not stated).
 {_SHARED_RULES}
 """.strip()
 
-# ── Voice / audio prompt ─────────────────────────────────────────────────────
+# ── Voice / audio prompt (post-transcription) ─────────────────────────────────
 AUDIO_SYSTEM_PROMPT = f"""
 You are a voice grocery list parser for HomeBrain.
-The user recorded a voice message listing products they want to add to their pantry.
+The user dictated a list of products they want to add to their pantry.
 The message may be in Hebrew, English, or mixed.
-Transcribe the audio mentally, then extract each product mentioned.
+Extract each product mentioned with its quantity (infer if not stated).
 {_SHARED_RULES}
 """.strip()
 
 
-def _make_client(api_key: str) -> genai.Client:
-    return genai.Client(api_key=api_key)
-
-
-def _base_config(temperature: float = 0.1) -> types.GenerateContentConfig:
-    return types.GenerateContentConfig(
-        response_mime_type="application/json",
-        temperature=temperature,
-    )
+def _make_client(api_key: str) -> OpenAI:
+    return OpenAI(api_key=api_key)
 
 
 # ── Public functions ─────────────────────────────────────────────────────────
@@ -86,45 +79,60 @@ def _base_config(temperature: float = 0.1) -> types.GenerateContentConfig:
 def analyze_receipt(image_bytes: bytes, api_key: str) -> dict:
     """Receipt image → full JSON with store_name, items, etc."""
     client = _make_client(api_key)
-    image  = Image.open(io.BytesIO(image_bytes))
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=["Analyze this receipt and return the JSON inventory.", image],
-        config=types.GenerateContentConfig(
-            system_instruction=RECEIPT_SYSTEM_PROMPT,
-            response_mime_type="application/json",
-            temperature=0.1,
-        ),
+    b64 = base64.b64encode(image_bytes).decode("utf-8")
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        temperature=0.1,
+        messages=[
+            {"role": "system", "content": RECEIPT_SYSTEM_PROMPT},
+            {"role": "user", "content": [
+                {"type": "text", "text": "Analyze this receipt and return the JSON inventory."},
+                {"type": "image_url", "image_url": {
+                    "url": f"data:image/jpeg;base64,{b64}",
+                    "detail": "high",
+                }},
+            ]},
+        ],
     )
-    return json.loads(response.text)
+    return json.loads(response.choices[0].message.content)
 
 
 def parse_text_to_items(text: str, api_key: str) -> list[dict]:
     """Free-text grocery list → list of items."""
     client = _make_client(api_key)
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=f"Parse this grocery list into products:\n\n{text}",
-        config=types.GenerateContentConfig(
-            system_instruction=TEXT_SYSTEM_PROMPT,
-            response_mime_type="application/json",
-            temperature=0.1,
-        ),
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        temperature=0.1,
+        messages=[
+            {"role": "system", "content": TEXT_SYSTEM_PROMPT},
+            {"role": "user", "content": f"Parse this grocery list into products:\n\n{text}"},
+        ],
     )
-    return json.loads(response.text).get("items", [])
+    return json.loads(response.choices[0].message.content).get("items", [])
 
 
 def parse_audio_to_items(audio_bytes: bytes, api_key: str) -> list[dict]:
-    """Voice recording (WAV/WEBM bytes) → list of items."""
+    """Voice recording (WAV/WEBM bytes) → list of items via Whisper + GPT-4o."""
     client = _make_client(api_key)
-    audio_part = types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav")
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=[audio_part, "Extract the grocery products mentioned in this recording."],
-        config=types.GenerateContentConfig(
-            system_instruction=AUDIO_SYSTEM_PROMPT,
-            response_mime_type="application/json",
-            temperature=0.1,
-        ),
+
+    # Step 1: transcribe with Whisper-1
+    audio_file = io.BytesIO(audio_bytes)
+    audio_file.name = "recording.wav"
+    transcript = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
     )
-    return json.loads(response.text).get("items", [])
+
+    # Step 2: parse transcript with GPT-4o
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        temperature=0.1,
+        messages=[
+            {"role": "system", "content": AUDIO_SYSTEM_PROMPT},
+            {"role": "user", "content": f"Extract grocery products from this transcript:\n\n{transcript.text}"},
+        ],
+    )
+    return json.loads(response.choices[0].message.content).get("items", [])
