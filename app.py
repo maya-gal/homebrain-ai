@@ -7,7 +7,9 @@ from database import (
     init_db, insert_items, get_all_items, search_items,
     get_expiring_items, get_categories, get_stats, delete_item,
     add_to_shopping_list, get_smart_predictions,
+    get_staple_list, add_staple, remove_staple, get_missing_staples,
 )
+from product_images import get_product_image
 from components import (
     page_header, demo_banner, hero_cards, wizard_steps,
     item_card_html, recipe_card, upload_zone_hint,
@@ -362,7 +364,49 @@ def page_mazava(user: str) -> None:
         return
 
     stats = get_stats()
-    hero_cards(stats)
+    missing_staples = get_missing_staples()
+    hero_cards(stats, missing=len(missing_staples))
+
+    # ── Staple List ───────────────────────────────────────────
+    with st.expander(f"📋  My Staple List  {'🔴 ' + str(len(missing_staples)) + ' missing' if missing_staples else '✅ all stocked'}", expanded=bool(missing_staples)):
+        if missing_staples:
+            section_title(f"MISSING FROM PANTRY — {len(missing_staples)} ITEMS")
+            for s in missing_staples:
+                c1, c2, c3 = st.columns([4, 1.5, 1.5])
+                img_url = get_product_image(s["product_name"], s["category"])
+                img_tag = f'<img src="{img_url}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px" onerror="this.style.display=\'none\'">' if img_url else ""
+                c1.markdown(f'{img_tag}<span style="font-weight:700">{s["product_name"]}</span> <span style="color:#6B7280;font-size:0.8rem">{s["category"]}</span>', unsafe_allow_html=True)
+                if c2.button("🛒 Add to list", key=f"staple_shop_{s['id']}", use_container_width=True):
+                    add_to_shopping_list(s["product_name"], s["category"])
+                    st.toast(f"'{s['product_name']}' added to shopping list!", icon="🛒")
+                if c3.button("Remove", key=f"staple_rm_{s['id']}", use_container_width=True):
+                    remove_staple(s["id"])
+                    st.rerun()
+            st.markdown("---")
+
+        all_staples = get_staple_list()
+        in_stock = [s for s in all_staples if s["product_name"].lower() not in {x["product_name"].lower() for x in missing_staples}]
+        if in_stock:
+            section_title(f"IN STOCK — {len(in_stock)} STAPLES")
+            cols = st.columns(4)
+            for i, s in enumerate(in_stock):
+                with cols[i % 4]:
+                    img_url = get_product_image(s["product_name"], s["category"])
+                    img_tag = f'<img src="{img_url}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:6px" onerror="this.style.display=\'none\'">' if img_url else ""
+                    st.markdown(f'<div style="font-size:0.8rem;font-weight:600;margin-bottom:4px">{img_tag}{s["product_name"]}</div>', unsafe_allow_html=True)
+                    if st.button("✕", key=f"staple_del_{s['id']}", use_container_width=True):
+                        remove_staple(s["id"])
+                        st.rerun()
+
+        with st.form("add_staple_form", clear_on_submit=True):
+            section_title("ADD TO STAPLE LIST")
+            sc1, sc2, sc3 = st.columns([3, 2, 1])
+            s_name = sc1.text_input("Product", placeholder="e.g. Milk, Eggs, Bread…", label_visibility="collapsed")
+            s_cat  = sc2.selectbox("Category", ["Produce","Dairy","Meat & Fish","Bakery","Frozen","Pantry","Beverages","Snacks","Household","Personal Care","Other"], label_visibility="collapsed")
+            if sc3.form_submit_button("➕ Add", use_container_width=True, type="primary") and s_name.strip():
+                added = add_staple(s_name.strip(), s_cat)
+                st.toast(f"'{s_name}' added to staple list!" if added else f"'{s_name}' is already in your staple list.", icon="📋")
+                st.rerun()
 
     col_search, col_cat = st.columns([3, 1])
     with col_search:

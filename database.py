@@ -55,6 +55,14 @@ def init_db() -> None:
                 action_date  TEXT NOT NULL
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS staple_list (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_name TEXT    NOT NULL,
+                category     TEXT    DEFAULT 'Other',
+                UNIQUE(product_name COLLATE NOCASE)
+            )
+        """)
         conn.commit()
 
 
@@ -272,6 +280,45 @@ def get_smart_predictions() -> list[dict]:
     # Sort: high urgency first, then most overdue
     predictions.sort(key=lambda x: (x["urgency"] != "High", -x["days_since_last"]))
     return predictions[:8]  # Cap at 8 predictions
+
+
+# ── Staple List ───────────────────────────────────────────────
+
+def get_staple_list() -> list[dict]:
+    with _conn() as conn:
+        rows = conn.execute("SELECT * FROM staple_list ORDER BY category, product_name").fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_staple(product_name: str, category: str = "Other") -> bool:
+    """Returns True if added, False if already exists."""
+    try:
+        with _conn() as conn:
+            conn.execute(
+                "INSERT INTO staple_list (product_name, category) VALUES (?,?)",
+                (product_name.strip(), category),
+            )
+            conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+
+def remove_staple(staple_id: int) -> None:
+    with _conn() as conn:
+        conn.execute("DELETE FROM staple_list WHERE id=?", (staple_id,))
+        conn.commit()
+
+
+def get_missing_staples() -> list[dict]:
+    """Return staples that are not currently in the pantry (or all expired)."""
+    staples = get_staple_list()
+    if not staples:
+        return []
+    inventory = get_all_items()
+    # Items that are present and not expired
+    in_stock = {i["product_name"].lower() for i in inventory if i["days_remaining"] > 0}
+    return [s for s in staples if s["product_name"].lower() not in in_stock]
 
 
 # ── Internal helpers ──────────────────────────────────────────

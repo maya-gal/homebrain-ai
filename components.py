@@ -29,9 +29,9 @@ def demo_banner(is_demo: bool) -> None:
 
 
 # ── Hero Stat Cards ───────────────────────────────────────────
-def hero_cards(stats: dict) -> None:
+def hero_cards(stats: dict, missing: int = 0) -> None:
     cards = [
-        ("primary", "📦", stats.get("total", 0),        "Total Items"),
+        ("primary", "🛍️", missing,                      "What's Missing"),
         ("success", "✅", stats.get("fresh", 0),         "Fresh"),
         ("warning", "⏳", stats.get("expiring_soon", 0), "Running Low"),
         ("danger",  "🗑", stats.get("expired", 0),       "Expired"),
