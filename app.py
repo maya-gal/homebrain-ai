@@ -375,9 +375,8 @@ def page_mazava(user: str) -> None:
             section_title(f"MISSING FROM PANTRY — {len(missing_staples)} ITEMS")
             for s in missing_staples:
                 c1, c2, c3 = st.columns([4, 1.5, 1.5])
-                img_url = get_product_image(s["product_name"], s["category"])
-                img_tag = f'<img src="{img_url}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px" onerror="this.style.display=\'none\'">' if img_url else ""
-                c1.markdown(f'{img_tag}<span style="font-weight:700">{s["product_name"]}</span> <span style="color:#6B7280;font-size:0.8rem">{s["category"]}</span>', unsafe_allow_html=True)
+                icon = CATEGORY_ICONS.get(s["category"], "📦")
+                c1.markdown(f'<span style="font-size:1.3rem;vertical-align:middle;margin-right:8px">{icon}</span><span style="font-weight:700">{s["product_name"]}</span> <span style="color:#6B7280;font-size:0.8rem">{s["category"]}</span>', unsafe_allow_html=True)
                 if c2.button("🛒 Add to list", key=f"staple_shop_{s['id']}", use_container_width=True):
                     add_to_shopping_list(s["product_name"], s["category"])
                     st.toast(f"'{s['product_name']}' added to shopping list!", icon="🛒")
@@ -393,9 +392,8 @@ def page_mazava(user: str) -> None:
             cols = st.columns(4)
             for i, s in enumerate(in_stock):
                 with cols[i % 4]:
-                    img_url = get_product_image(s["product_name"], s["category"])
-                    img_tag = f'<img src="{img_url}" style="width:28px;height:28px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:6px" onerror="this.style.display=\'none\'">' if img_url else ""
-                    st.markdown(f'<div style="font-size:0.8rem;font-weight:600;margin-bottom:4px">{img_tag}{s["product_name"]}</div>', unsafe_allow_html=True)
+                    icon = CATEGORY_ICONS.get(s["category"], "📦")
+                    st.markdown(f'<div style="font-size:0.8rem;font-weight:600;margin-bottom:4px"><span style="margin-right:5px">{icon}</span>{s["product_name"]}</div>', unsafe_allow_html=True)
                     if st.button("✕", key=f"staple_del_{s['id']}", use_container_width=True):
                         remove_staple(s["id"])
                         st.rerun()
@@ -446,7 +444,7 @@ def page_mazava(user: str) -> None:
     for i, item in enumerate(in_stock_items):
         with cols[i % 3]:
             pred = predictions.get(item["product_name"].lower(), "")
-            st.markdown(pantry_card_html(item, prediction=pred), unsafe_allow_html=True)
+            st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
             if st.button("🗑️ Remove", key=f"del_{item['id']}", use_container_width=True):
                 delete_item(item["id"])
                 st.rerun()
