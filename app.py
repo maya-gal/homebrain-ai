@@ -390,182 +390,181 @@ def page_mazava(user: str) -> None:
                 st.rerun()
 
 
-# ── Scan Receipt Page ─────────────────────────────────────────
-def render_scan_receipt(user: str) -> None:
-    page_header("📄 Scan Receipt", "Upload a grocery receipt to update your food automatically.")
-    demo_banner(IS_DEMO)
-
-    if "scan_step" not in st.session_state:
-        st.session_state.scan_step = 1
-    if "scan_items" not in st.session_state:
-        st.session_state.scan_items = []
-    if "scan_store" not in st.session_state:
-        st.session_state.scan_store = ""
-
-    wizard_steps(st.session_state.scan_step)
-
-    # Step 1: Upload
-    if st.session_state.scan_step == 1:
-        upload_zone_hint()
-        tab_img, tab_text = st.tabs(["📷 Receipt Image", "✏️ Type / Paste"])
-
-        with tab_img:
-            uploaded = st.file_uploader(
-                "Upload receipt image", type=["jpg", "jpeg", "png", "webp"],
-                label_visibility="collapsed",
-            )
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("🎬 Load Demo Receipt", use_container_width=True):
-                    from demo_data import MOCK_RECEIPT_RESPONSE
-                    st.session_state.scan_items = MOCK_RECEIPT_RESPONSE["items"]
-                    st.session_state.scan_store = MOCK_RECEIPT_RESPONSE.get("store_name", "")
-                    st.session_state.scan_step = 3
-                    st.rerun()
-            with col2:
-                if uploaded and st.button("🔍 Analyze Receipt", type="primary", use_container_width=True):
-                    if IS_DEMO:
-                        st.warning("No API key found. Click 'Load Demo Receipt' instead.")
-                    else:
-                        with st.spinner("Analyzing your receipt with AI..."):
-                            from vision import analyze_receipt
-                            result = analyze_receipt(uploaded.read(), API_KEY)
-                            st.session_state.scan_items = result.get("items", [])
-                            st.session_state.scan_store = result.get("store_name", "")
-                            st.session_state.scan_step = 3
-                            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ── Manual add ────────────────────────────────────────────
-    with st.expander("➕ Add Item Manually"):
-        CATS = ["Produce","Dairy","Meat & Fish","Bakery","Frozen","מזווה","Beverages","Snacks","Household","Personal Care","Other"]
-        with st.form("manual_add_maz"):
-            mc1, mc2, mc3, mc4 = st.columns([3, 2, 2, 2])
-            name  = mc1.text_input("Product name")
-            cat   = mc2.selectbox("Category", CATS)
-            qty   = mc3.text_input("Quantity", value="1")
-            shelf = mc4.number_input("Shelf life (days)", min_value=1, value=7)
-            if st.form_submit_button("Add", type="primary"):
-                if name.strip():
-                    insert_items([{"product_name": name, "category": cat, "quantity": qty,
-                                   "shelf_life_days": shelf, "confidence": "high"}],
-                                 added_by=user, store_name=None)
-                    st.toast(f"'{name}' added!", icon="✅")
-                    st.rerun()
-                        st.session_state.scan_items = parse_text_to_items(text_input, API_KEY)
-                        st.session_state.scan_store = ""
-                        st.session_state.scan_step = 3
-                        st.rerun()
-
-    # Step 3: Review & save
-    elif st.session_state.scan_step == 3:
-        import pandas as pd
-        items = st.session_state.scan_items
-        if st.session_state.scan_store:
-            st.info(f"🏪 Store: {st.session_state.scan_store}")
-
-        section_title(f"REVIEW — {len(items)} ITEMS DETECTED")
-        df = pd.DataFrame(items)
-        edited = st.data_editor(df, use_container_width=True, num_rows="dynamic", key="scan_editor")
-
-        col_save, col_cancel = st.columns(2)
-        with col_save:
-            if st.button("✅ Save to food", type="primary", use_container_width=True):
-                records = edited.to_dict("records")
-                n = insert_items(records, user, st.session_state.scan_store)
-                st.session_state.scan_step = 4
-                st.session_state.saved_count = n
-                st.rerun()
-        with col_cancel:
-            if st.button("← Start Over", use_container_width=True):
-                st.session_state.scan_step = 1
-                st.session_state.scan_items = []
-                st.rerun()
-
-    # Step 4: Done
-    elif st.session_state.scan_step == 4:
-        n = st.session_state.get("saved_count", 0)
-        st.success(f"✅ {n} items saved to your food!")
-        if st.button("Scan Another Receipt", type="primary"):
-            st.session_state.scan_step = 1
-            st.session_state.scan_items = []
-            st.rerun()
-
-
-# ── Meal Planner Page ─────────────────────────────────────────
-def render_meal_planner() -> None:
-    page_header("🍽 Chaos Meal Planner", "Recipes built from items about to expire.")
-    demo_banner(IS_DEMO)
+# ── Page: Meal Planner ────────────────────────────────────────
+def page_meal_planner() -> None:
+    page_header("🍳 Chaos Meal Planner", "Zero-waste cooking. AI turns expiring ingredients into tonight's dinner.")
+    demo_banner(is_demo())
 
     expiring = get_expiring_items(within_days=5)
 
     if not expiring:
-        st.info("No items expiring soon — your food is in great shape! Come back when things are getting low.")
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 1rem">
+            <div style="font-size:2.5rem;margin-bottom:12px">🎉</div>
+            <div style="font-size:1rem;font-weight:600;color:#0F172A">Nothing expiring soon!</div>
+            <div style="font-size:0.85rem;color:#64748B;margin-top:6px">Your pantry is in great shape.</div>
+        </div>
+        """, unsafe_allow_html=True)
         return
 
-    section_title(f"USING {len(expiring)} EXPIRING ITEMS")
-    badges = " ".join(f'<span class="badge badge-soon">{i["product_name"]}</span>' for i in expiring)
-    st.markdown(f'<div style="margin-bottom:1rem">{badges}</div>', unsafe_allow_html=True)
+    section_title(f"{len(expiring)} INGREDIENTS ABOUT TO EXPIRE")
+    pills = "".join(
+        f'<span class="badge {"badge-low" if i["days_remaining"]<=2 else "badge-soon"}" style="margin:3px">'
+        f'{i["product_name"]} · {i["days_remaining"]}d</span>'
+        for i in expiring
+    )
+    st.markdown(f'<div style="margin-bottom:1.5rem">{pills}</div>', unsafe_allow_html=True)
 
-    if "recipes" not in st.session_state:
-        st.session_state.recipes = []
+    col_btn, col_fav = st.columns([2, 1])
+    generate = col_btn.button("✨  Generate Meal Ideas", type="primary", use_container_width=True)
 
-    if st.button("✨ Generate Meal Ideas", type="primary"):
-        if IS_DEMO:
-            from demo_data import MOCK_RECIPES
-            st.session_state.recipes = MOCK_RECIPES
-        else:
-            with st.spinner("Thinking up delicious recipes..."):
+    if generate:
+        with st.spinner("Chef AI is thinking…"):
+            if is_demo():
+                time.sleep(1.5)
+                st.session_state["recipes"] = MOCK_RECIPES
+            else:
                 from planner import suggest_meals
-                st.session_state.recipes = suggest_meals(expiring, API_KEY)
-        st.rerun()
+                try:
+                    st.session_state["recipes"] = suggest_meals(expiring, get_api_key())
+                except Exception as e:
+                    st.error(f"Meal planner error: {e}")
+                    return
+        st.toast("2 recipes ready!", icon="🍳")
 
-    for i, r in enumerate(st.session_state.recipes, 1):
+    recipes = st.session_state.get("recipes", [])
+    if not recipes:
+        return
+
+    st.markdown("---")
+    for i, r in enumerate(recipes, 1):
         recipe_card(r, i)
+        if st.button(f"⭐ Save Recipe {i}", key=f"fav_{i}", type="secondary"):
+            favs = st.session_state.get("favourites", [])
+            if r not in favs:
+                favs.append(r)
+                st.session_state["favourites"] = favs
+            st.toast(f"'{r['name']}' saved to favourites!", icon="⭐")
+
+    favs = st.session_state.get("favourites", [])
+    if favs:
+        with st.expander(f"⭐ Saved Favourites ({len(favs)})"):
+            for i, r in enumerate(favs, 1):
+                recipe_card(r, i)
 
 
-# ── Running Low Page ──────────────────────────────────────────
-def render_running_low() -> None:
-    page_header("⚠️ Running Low", "Items expiring soon and smart restocking predictions.")
-    demo_banner(IS_DEMO)
+# ── Page: Running Low ─────────────────────────────────────────
+def page_running_low() -> None:
+    page_header("⚠️ Running Low", "Items expiring within 2 days. Act now to avoid waste.")
+    demo_banner(is_demo())
 
-    expiring    = get_expiring_items(within_days=3)
-    expired     = [i for i in get_all_items() if i["status"] == "Expired"]
+    urgent = get_expiring_items(within_days=2)
+
+    if not urgent:
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 1rem">
+            <div style="font-size:2.5rem;margin-bottom:12px">✅</div>
+            <div style="font-size:1rem;font-weight:600;color:#0F172A">All clear!</div>
+            <div style="font-size:0.85rem;color:#64748B;margin-top:6px">Nothing critical right now.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+
+    st.markdown(f'<div style="margin-bottom:1rem">{len(urgent)} item(s) need attention today</div>', unsafe_allow_html=True)
+
+    for item in urgent:
+        st.markdown(alert_card_html(item), unsafe_allow_html=True)
+        col_used, col_shop = st.columns([1, 1])
+
+        with col_used:
+            if st.button("✓ Mark Used", key=f"used_{item['id']}", use_container_width=True, type="primary"):
+                delete_item(item["id"], reason="used")
+                st.toast(f"'{item['product_name']}' marked as used.", icon="✅")
+                st.rerun()
+
+        with col_shop:
+            if st.button("🛒 Add to Shopping List", key=f"shop_low_{item['id']}", use_container_width=True):
+                add_to_shopping_list(item["product_name"], item["category"], item["quantity"])
+                st.toast(f"Added to shopping list!", icon="🛒")
+
+        st.markdown("<div style='margin-bottom:4px'></div>", unsafe_allow_html=True)
+
+
+# ── Page: AI Predictions ──────────────────────────────────────
+def page_ai_predictions() -> None:
+    page_header(
+        "🧠 AI Inventory Manager",
+        "Learns your shopping patterns. Predicts what you'll need before you run out.",
+    )
+    demo_banner(is_demo())
+
+    with st.expander("How does this work?", expanded=False):
+        st.markdown("""
+        **HomeBrain AI tracks your purchase history every time you scan a receipt.**
+
+        It learns:
+        - How often you buy each product (e.g. milk every 10 days)
+        - Your last purchase date for each item
+
+        When the gap since your last purchase approaches your average re-buy interval,
+        it surfaces the item as a **prediction** — before you even notice it's missing.
+
+        > The more receipts you scan, the smarter the predictions get.
+        """)
+
     predictions = get_smart_predictions()
 
-    col1, col2 = st.columns(2)
+    if not predictions:
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 1rem">
+            <div style="font-size:2.5rem;margin-bottom:12px">📊</div>
+            <div style="font-size:1rem;font-weight:600">Not enough data yet</div>
+            <div style="font-size:0.85rem;color:#64748B;margin-top:6px">
+                Scan at least 2 receipts for the same items to start seeing predictions.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        return
 
-    with col1:
-        section_title(f"EXPIRING SOON — {len(expiring)} ITEMS")
-        if expiring:
-            for item in expiring:
-                st.markdown(alert_card_html(item), unsafe_allow_html=True)
-                if st.button("Add to Shopping List", key=f"shop_{item['id']}", use_container_width=True):
-                    add_to_shopping_list(item["product_name"], item["category"], item["quantity"])
-                    st.toast(f"'{item['product_name']}' added to shopping list!", icon="🛒")
-        else:
-            st.success("Nothing expiring in the next 3 days!")
+    high   = [p for p in predictions if p["urgency"] == "High"]
+    medium = [p for p in predictions if p["urgency"] == "Medium"]
 
-        if expired:
-            st.markdown("<br>", unsafe_allow_html=True)
-            section_title(f"EXPIRED — {len(expired)} ITEMS")
-            for item in expired:
-                st.markdown(alert_card_html(item), unsafe_allow_html=True)
-                if st.button("Remove", key=f"exp_del_{item['id']}", use_container_width=True):
-                    delete_item(item["id"], reason="expired")
-                    st.rerun()
+    if high:
+        section_title(f"🔴 HIGH PRIORITY — {len(high)} ITEMS LIKELY NEEDED NOW")
+        for pred in high:
+            st.markdown(prediction_card_html(pred), unsafe_allow_html=True)
+            if st.button(f"🛒 Add '{pred['product_name']}' to Shopping List",
+                         key=f"pred_shop_{pred['product_name']}"):
+                add_to_shopping_list(pred["product_name"], pred["category"])
+                st.toast(f"'{pred['product_name']}' added to shopping list!", icon="🛒")
 
-    with col2:
-        section_title(f"SMART PREDICTIONS — {len(predictions)} ITEMS")
-        if predictions:
-            for pred in predictions:
-                st.markdown(prediction_card_html(pred), unsafe_allow_html=True)
-                if st.button("Add to List", key=f"pred_{pred['product_name']}", use_container_width=True):
-                    add_to_shopping_list(pred["product_name"], pred["category"])
-                    st.toast(f"'{pred['product_name']}' added to shopping list!", icon="🛒")
-        else:
-            st.info("Not enough purchase history for predictions yet. Scan more receipts to train your AI!")
+    if medium:
+        st.markdown("<br>", unsafe_allow_html=True)
+        section_title(f"🟡 MEDIUM PRIORITY — {len(medium)} ITEMS TO WATCH")
+        for pred in medium:
+            st.markdown(prediction_card_html(pred), unsafe_allow_html=True)
+            if st.button(f"🛒 Add to List", key=f"pred_med_{pred['product_name']}"):
+                add_to_shopping_list(pred["product_name"], pred["category"])
+                st.toast(f"Added!", icon="🛒")
+
+    st.markdown("---")
+    section_title("YOUR SHOPPING PATTERNS")
+    rows = [
+        {
+            "Product":             p["product_name"],
+            "Category":            p["category"],
+            "Avg. Buy Interval":   f"Every {p['avg_gap_days']} days",
+            "Days Since Last Buy": p["days_since_last"],
+            "Priority":            p["urgency"],
+        }
+        for p in predictions
+    ]
+    if rows:
+        df = pd.DataFrame(rows)
+        def colour_priority(val):
+            return "background:#FEE2E2;color:#991B1B" if val == "High" else "background:#FEF3C7;color:#92400E"
+        st.dataframe(df.style.map(colour_priority, subset=["Priority"]),
+                     use_container_width=True, hide_index=True)
 
 
 # ── Main Router ───────────────────────────────────────────────
