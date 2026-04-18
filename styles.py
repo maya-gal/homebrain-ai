@@ -288,7 +288,31 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 }
 .item-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .item-card-top  { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
-.item-name { font-size: 0.95rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-name {
+  font-size: 0.92rem; font-weight: 800; color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3;
+}
+/* Remove button fused to item card */
+[data-testid="element-container"]:has(.item-card) .item-card {
+  margin-bottom: 0 !important;
+  border-radius: var(--radius) var(--radius) 0 0 !important;
+  border-bottom: none !important;
+}
+[data-testid="element-container"]:has(.item-card) + [data-testid="element-container"] button {
+  border-radius: 0 0 var(--radius) var(--radius) !important;
+  border-top: none !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
+  background: #FFF5F5 !important;
+  color: #DC2626 !important;
+  border: 1px solid var(--border) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+[data-testid="element-container"]:has(.item-card) + [data-testid="element-container"] button:hover {
+  background: #FEE2E2 !important;
+}
 .item-qty  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
 .item-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .item-prediction { font-size: 0.72rem; color: #7C3AED; background: #EDE9FE; border-radius: 6px; padding: 3px 8px; margin-top: 6px; display: inline-block; font-weight: 600; }

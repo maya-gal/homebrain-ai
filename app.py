@@ -423,7 +423,10 @@ def page_mazava(user: str) -> None:
         items = get_all_items()
 
     if not items:
-        st.info("No items in your food yet. Scan a receipt to get started!")
+        if query or (cat_filter and cat_filter != "All"):
+            st.info(f"No results found for '{query or cat_filter}'.")
+        else:
+            st.info("No items in your food yet. Scan a receipt to get started!")
         return
 
     # Separate in-stock vs zero-quantity items
