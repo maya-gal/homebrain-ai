@@ -4,6 +4,7 @@ All functions return HTML strings or render directly with st.markdown().
 """
 
 import streamlit as st
+from product_images import get_product_image
 
 
 # ── Page Header ──────────────────────────────────────────────
@@ -87,10 +88,18 @@ def shelf_bar(days_remaining: int, shelf_life_days: int, status: str) -> str:
 
 # ── Item Card ─────────────────────────────────────────────────
 def item_card_html(item: dict) -> str:
+    img_url = get_product_image(item['product_name'], item['category'])
+    img_html = (
+        f'<img src="{img_url}" class="item-thumb" alt="{item["product_name"]}" '
+        f'onerror="this.style.display=\'none\'">'
+        if img_url else
+        f'<div class="item-thumb item-thumb-emoji">{_category_emoji(item["category"])}</div>'
+    )
     return f"""
     <div class="item-card">
         <div class="item-card-top">
-            <div>
+            {img_html}
+            <div style="flex:1;min-width:0">
                 <div class="item-name">{item['product_name']}</div>
                 <div class="item-qty">{item['quantity']}</div>
             </div>
@@ -102,6 +111,15 @@ def item_card_html(item: dict) -> str:
             {user_badge(item['added_by'])}
         </div>
     </div>"""
+
+
+def _category_emoji(category: str) -> str:
+    return {
+        "Produce": "🥬", "Dairy": "🥛", "Meat & Fish": "🥩",
+        "Bakery": "🍞", "Frozen": "🧊", "Pantry": "🫙",
+        "Beverages": "🧃", "Snacks": "🍪", "Household": "🧹",
+        "Personal Care": "🧴",
+    }.get(category, "📦")
 
 
 # ── Wizard Steps ──────────────────────────────────────────────
@@ -181,10 +199,18 @@ def alert_card_html(item: dict) -> str:
     card_cls   = "alert-card" if is_expired else "alert-card warn"
     countdown  = "EXPIRED" if is_expired else f"{item['days_remaining']}d"
     count_cls  = "alert-countdown" if is_expired else "alert-countdown warn"
+    img_url    = get_product_image(item['product_name'], item['category'])
+    img_html   = (
+        f'<img src="{img_url}" class="item-thumb" alt="{item["product_name"]}" '
+        f'onerror="this.style.display=\'none\'">'
+        if img_url else
+        f'<div class="item-thumb item-thumb-emoji">{_category_emoji(item["category"])}</div>'
+    )
     return f"""
     <div class="{card_cls}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            {img_html}
+            <div style="flex:1;min-width:0">
                 <div class="alert-name">{item['product_name']}</div>
                 <div class="alert-meta">{item['category']} · {item['quantity']} · Added by {item['added_by']}</div>
             </div>

@@ -237,6 +237,23 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .badge-primary { background: var(--primary-light);  color: var(--primary-dark); }
 .badge-gray    { background: var(--surface-mid);    color: var(--text-muted); }
 
+/* ── Product Thumbnail ────────────────────────────────────── */
+.item-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-low);
+}
+.item-thumb-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  background: var(--surface-low);
+}
+
 /* ── Item Cards ───────────────────────────────────────────── */
 .item-card {
   background: var(--surface);
@@ -250,6 +267,12 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .item-card:hover {
   box-shadow: var(--shadow-md);
   transform: scale(1.003);
+}
+.item-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 .item-name { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 .item-qty  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
