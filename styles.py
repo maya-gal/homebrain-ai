@@ -256,6 +256,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .badge-gray    { background: var(--surface-mid);    color: var(--text-muted); }
 
 /* ── Product Thumbnail ────────────────────────────────────── */
+.mh-img .item-thumb { width:80px !important; height:80px !important; border-radius:14px !important; margin-bottom:8px; }
 .item-thumb {
   width: 76px;
   height: 76px;

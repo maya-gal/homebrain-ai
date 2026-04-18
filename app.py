@@ -393,11 +393,10 @@ def page_mazava(user: str) -> None:
             cols_m = st.columns(3)
             for i, s in enumerate(missing_staples):
                 with cols_m[i % 3]:
-                    emoji = _product_emoji(s["product_name"], s["category"])
+                    img_html = get_product_image(s["product_name"], s["category"])
                     st.markdown(
-                        f'<div style="background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:16px;'
-                        f'padding:14px 16px;margin-bottom:10px">'
-                        f'<div style="font-size:1.8rem;margin-bottom:6px">{emoji}</div>'
+                        f'<div style="background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:16px;padding:14px 16px;margin-bottom:10px">'
+                        f'<div class="mh-img">{img_html}</div>'
                         f'<div style="font-weight:800;font-size:0.92rem;color:#1E1033">{s["product_name"]}</div>'
                         f'<div style="font-size:0.72rem;color:#9CA3AF;margin-top:2px">{s["category"]}</div>'
                         f'</div>',
@@ -419,12 +418,11 @@ def page_mazava(user: str) -> None:
             cols_s = st.columns(4)
             for i, s in enumerate(in_stock):
                 with cols_s[i % 4]:
-                    emoji = _product_emoji(s["product_name"], s["category"])
+                    img_html = get_product_image(s["product_name"], s["category"])
                     st.markdown(
-                        f'<div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:14px;'
-                        f'padding:10px 12px;margin-bottom:8px;text-align:center">'
-                        f'<div style="font-size:1.4rem">{emoji}</div>'
-                        f'<div style="font-size:0.78rem;font-weight:700;color:#1E1033;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{s["product_name"]}</div>'
+                        f'<div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:14px;padding:10px 12px;margin-bottom:8px;text-align:center">'
+                        f'<div class="mh-img" style="display:flex;justify-content:center">{img_html}</div>'
+                        f'<div style="font-size:0.78rem;font-weight:700;color:#1E1033;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{s["product_name"]}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
