@@ -109,7 +109,8 @@ def item_card_html(item: dict, prediction: str = "") -> str:
             {category_badge(item['category'])}
             {user_badge(item['added_by'])}
         </div>
-    </div>"""
+    </div>
+    """
 
 
 def _category_emoji(category: str) -> str:

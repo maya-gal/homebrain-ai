@@ -37,7 +37,6 @@ PAGES = [
     ("🫙", "Pantry"),
     ("🛒", "Shopping List"),
     ("🍳", "Meal Planner"),
-    ("⚠️", "Running Low"),
 ]
 
 
@@ -464,18 +463,12 @@ def page_mazava(user: str) -> None:
         oos_cols = st.columns(3)
         for i, item in enumerate(out_of_stock):
             with oos_cols[i % 3]:
-                img_url = get_product_image(item["product_name"], item["category"])
-                img_tag = (
-                    f'<img src="{img_url}" style="width:36px;height:36px;border-radius:8px;'
-                    f'object-fit:cover;vertical-align:middle;margin-right:8px;opacity:0.5" '
-                    f'onerror="this.style.display=\'none\'">'
-                    if img_url else ""
-                )
+                icon = CATEGORY_ICONS.get(item["category"], "📦")
                 st.markdown(f"""
                 <div style="background:#F9FAFB;border:1.5px dashed #D1D5DB;border-radius:12px;
                             padding:12px 14px;margin-bottom:10px;opacity:0.85">
-                    <div style="display:flex;align-items:center;margin-bottom:6px">
-                        {img_tag}
+                    <div style="display:flex;align-items:center;margin-bottom:6px;gap:8px">
+                        <span style="font-size:1.5rem">{icon}</span>
                         <div>
                             <div style="font-weight:700;font-size:0.9rem;color:#374151">{item['product_name']}</div>
                             <div style="font-size:0.75rem;color:#9CA3AF">{item['category']}</div>
@@ -497,6 +490,24 @@ def page_mazava(user: str) -> None:
 def page_meal_planner() -> None:
     page_header("🍳 Chaos Meal Planner", "Zero-waste cooking. AI turns expiring ingredients into tonight's dinner.")
     demo_banner(is_demo())
+
+    # ── Running Low alert strip ───────────────────────────────
+    urgent = get_expiring_items(within_days=2)
+    if urgent:
+        section_title(f"⚠️ RUNNING LOW — {len(urgent)} ITEMS NEED ATTENTION")
+        for item in urgent:
+            st.markdown(alert_card_html(item), unsafe_allow_html=True)
+            c_used, c_shop = st.columns(2)
+            with c_used:
+                if st.button("✓ Mark Used", key=f"mp_used_{item['id']}", use_container_width=True, type="primary"):
+                    delete_item(item["id"], reason="used")
+                    st.toast(f"'{item['product_name']}' marked as used.", icon="✅")
+                    st.rerun()
+            with c_shop:
+                if st.button("🛒 Add to Shopping List", key=f"mp_shop_{item['id']}", use_container_width=True):
+                    add_to_shopping_list(item["product_name"], item["category"], item["quantity"])
+                    st.toast("Added to shopping list!", icon="🛒")
+        st.markdown("---")
 
     expiring = get_expiring_items(within_days=5)
 

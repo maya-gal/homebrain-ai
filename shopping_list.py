@@ -6,6 +6,7 @@ import streamlit as st
 from database import (
     get_shopping_list, add_to_shopping_list,
     mark_bought, unmark_bought, clear_bought, auto_populate_shopping_list,
+    get_price_estimates,
 )
 from components import page_header, demo_banner, section_title, category_badge
 
@@ -68,21 +69,46 @@ def render(is_demo_mode: bool) -> None:
     pending = [i for i in items if not i["is_bought"]]
     bought  = [i for i in items if i["is_bought"]]
 
+    # ── Price estimate banner ─────────────────────────────────
+    prices = get_price_estimates(items)
+    total_est   = sum(prices.get(i["item_name"].lower(), 0) for i in pending)
+    bought_est  = sum(prices.get(i["item_name"].lower(), 0) for i in bought)
+    st.markdown(f"""
+    <div style="display:flex;gap:12px;margin-bottom:1.2rem;flex-wrap:wrap">
+        <div style="background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;
+                    border-radius:14px;padding:14px 22px;flex:1;min-width:140px">
+            <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;opacity:0.85;margin-bottom:4px">
+                ESTIMATED TOTAL
+            </div>
+            <div style="font-size:1.6rem;font-weight:900">${total_est:.2f}</div>
+            <div style="font-size:0.72rem;opacity:0.75;margin-top:2px">{len(pending)} items to buy</div>
+        </div>
+        {"" if not bought else f'''
+        <div style="background:#F1F5F9;border-radius:14px;padding:14px 22px;flex:1;min-width:140px">
+            <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;color:#64748B;margin-bottom:4px">
+                ALREADY BOUGHT
+            </div>
+            <div style="font-size:1.6rem;font-weight:900;color:#0F172A">${bought_est:.2f}</div>
+            <div style="font-size:0.72rem;color:#94A3B8;margin-top:2px">{len(bought)} items</div>
+        </div>'''}
+    </div>
+    """, unsafe_allow_html=True)
+
     # Pending items
     if pending:
         section_title(f"TO BUY — {len(pending)} ITEMS")
         for item in pending:
-            _render_item_row(item, is_bought=False)
+            _render_item_row(item, is_bought=False, price=prices.get(item["item_name"].lower()))
 
     # Bought items
     if bought:
         st.markdown("<br>", unsafe_allow_html=True)
         section_title(f"IN CART / BOUGHT — {len(bought)} ITEMS")
         for item in bought:
-            _render_item_row(item, is_bought=True)
+            _render_item_row(item, is_bought=True, price=prices.get(item["item_name"].lower()))
 
 
-def _render_item_row(item: dict, is_bought: bool) -> None:
+def _render_item_row(item: dict, is_bought: bool, price: float = None) -> None:
     col_check, col_info, col_action = st.columns([0.5, 5, 1.5])
 
     with col_check:
@@ -96,6 +122,10 @@ def _render_item_row(item: dict, is_bought: bool) -> None:
 
     with col_info:
         opacity = "opacity:0.4;" if is_bought else ""
+        price_html = (
+            f'<span style="font-size:0.78rem;color:#7C3AED;font-weight:700;margin-left:8px">~${price:.2f}</span>'
+            if price else ""
+        )
         st.markdown(f"""
         <div style="{opacity}transition:opacity .2s">
             <span style="font-weight:600;font-size:0.9rem">
@@ -104,6 +134,7 @@ def _render_item_row(item: dict, is_bought: bool) -> None:
             &nbsp;
             <span class="badge badge-primary" style="font-size:0.7rem">{item['category']}</span>
             <span style="font-size:0.78rem;color:#94A3B8;margin-left:8px">{item['quantity']}</span>
+            {price_html}
         </div>
         """, unsafe_allow_html=True)
 

@@ -159,6 +159,33 @@ def get_stats() -> dict:
 
 # ── Shopping List ─────────────────────────────────────────────
 
+_CATEGORY_PRICE_DEFAULTS: dict[str, float] = {
+    "Produce": 3.50, "Dairy": 4.00, "Meat & Fish": 8.00, "Bakery": 3.50,
+    "Frozen": 5.00, "Pantry": 4.00, "Beverages": 3.00, "Snacks": 4.50,
+    "Household": 6.00, "Personal Care": 7.00, "Other": 4.00,
+}
+
+
+def get_price_estimates(shopping_items: list[dict]) -> dict[str, float]:
+    """Return {item_name.lower(): estimated_price} using past unit_price or category default."""
+    estimates: dict[str, float] = {}
+    with _conn() as conn:
+        for item in shopping_items:
+            name = item["item_name"]
+            row = conn.execute(
+                "SELECT AVG(unit_price) as avg_p FROM inventory "
+                "WHERE LOWER(product_name)=LOWER(?) AND unit_price IS NOT NULL",
+                (name,),
+            ).fetchone()
+            if row and row["avg_p"]:
+                estimates[name.lower()] = round(row["avg_p"], 2)
+            else:
+                estimates[name.lower()] = _CATEGORY_PRICE_DEFAULTS.get(
+                    item.get("category", "Other"), 4.00
+                )
+    return estimates
+
+
 def get_shopping_list() -> list[dict]:
     with _conn() as conn:
         rows = conn.execute(
