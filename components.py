@@ -19,13 +19,7 @@ def page_header(title: str, subtitle: str) -> None:
 
 # ── Demo Banner ───────────────────────────────────────────────
 def demo_banner(is_demo: bool) -> None:
-    if is_demo:
-        st.markdown("""
-        <div class="demo-banner">
-            🎬 <strong>Demo Mode</strong> &nbsp;—&nbsp;
-            Running with mock AI data. Add <code>GEMINI_API_KEY</code> to <code>.env</code> to go live.
-        </div>
-        """, unsafe_allow_html=True)
+    pass  # Banner hidden
 
 
 # ── Hero Stat Cards ───────────────────────────────────────────
@@ -71,19 +65,12 @@ def user_badge(user: str) -> str:
 # ── Shelf Life Bar ─────────────────────────────────────────────
 def shelf_bar(days_remaining: int, shelf_life_days: int, status: str) -> str:
     pct = min(100, round(days_remaining / max(shelf_life_days, 1) * 100))
-    cls_map = {
-        "Fresh": "fresh", "Use Soon": "soon",
-        "Running Low": "low", "Expired": "expired",
-    }
+    cls_map = {"Fresh": "fresh", "Use Soon": "soon", "Running Low": "low", "Expired": "expired"}
     bar_cls = cls_map.get(status, "fresh")
     label = f"{days_remaining}d left" if days_remaining > 0 else "Expired"
-    return f"""
-    <div class="shelf-bar-wrap">
-        <div class="shelf-bar-bg">
-            <div class="shelf-bar-fill {bar_cls}" style="width:{pct}%"></div>
-        </div>
-        <div class="shelf-days">{label}</div>
-    </div>"""
+    return (f'<div class="shelf-bar-wrap">'
+            f'<div class="shelf-bar-bg"><div class="shelf-bar-fill {bar_cls}" style="width:{pct}%"></div></div>'
+            f'<div class="shelf-days">{label}</div></div>')
 
 
 # ── Item Card ─────────────────────────────────────────────────
@@ -93,24 +80,12 @@ def item_card_html(item: dict, prediction: str = "") -> str:
         f'<div class="item-prediction">🔮 Prediction: {prediction}</div>'
         if prediction else ""
     )
-    return f"""
-    <div class="item-card">
-        <a href="?delete={item['id']}" class="card-del" title="Remove">✕</a>
-        <div class="item-card-top">
-            {img_html}
-            <div style="flex:1;min-width:0">
-                <div class="item-name">{item['product_name']}</div>
-                <div class="item-qty">{item['quantity']}</div>
-            </div>
-            {status_badge(item['status'])}
-        </div>
-        {shelf_bar(item['days_remaining'], item['shelf_life_days'], item['status'])}
-        {prediction_html}
-        <div class="item-meta">
-            {category_badge(item['category'])}
-            {user_badge(item['added_by'])}
-        </div>
-    </div>"""
+    name_div = f'<div style="flex:1;min-width:0"><div class="item-name">{item["product_name"]}</div><div class="item-qty">{item["quantity"]}</div></div>'
+    top = f'<div class="item-card-top">{img_html}{name_div}{status_badge(item["status"])}</div>'
+    bar = shelf_bar(item['days_remaining'], item['shelf_life_days'], item['status'])
+    meta = f'<div class="item-meta">{category_badge(item["category"])} {user_badge(item["added_by"])}</div>'
+    del_btn = f'<a href="?delete={item["id"]}" class="card-del" title="Remove">✕</a>'
+    return f'<div class="item-card">{del_btn}{top}{bar}{prediction_html}{meta}</div>'
 
 
 def _category_emoji(category: str) -> str:
