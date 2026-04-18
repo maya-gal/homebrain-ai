@@ -1,73 +1,70 @@
 """
 styles.py — HomeBrain AI design system.
-Based on Google Stitch warm-brown token set.
+Inspired by Wix.com design language: Wix Madefor font, #116DFF blue, clean white surfaces.
 """
 
 def get_css() -> str:
     return """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap');
 
-/* ── Design Tokens (Stitch warm-brown) ───────────────────── */
+/* ── Design Tokens (Wix-inspired) ────────────────────────── */
 :root {
-  /* Brand */
-  --primary:            #8d6e63;
-  --primary-dark:       #5d4037;
-  --primary-container:  #d7ccc8;
+  /* Brand — Wix Blue */
+  --primary:            #116DFF;
+  --primary-dark:       #0B52C4;
+  --primary-light:      #E8F0FF;
   --on-primary:         #ffffff;
-  --on-primary-container: #3e2723;
 
   /* Secondary */
-  --secondary:          #795548;
-  --secondary-container:#efebe9;
-
-  /* Tertiary / Urgent */
-  --tertiary:           #ad350a;
-  --tertiary-light:     rgba(254,111,66,.12);
+  --secondary:          #3B4057;
+  --secondary-light:    #F0F4FF;
 
   /* Semantic */
-  --success:            #5a7a52;
-  --success-light:      #dff0d8;
-  --warning:            #c4903a;
-  --warning-light:      #fdf3dc;
-  --danger:             #a73b21;
-  --danger-light:       #fde8e4;
+  --success:            #00C07A;
+  --success-light:      #E6FAF3;
+  --warning:            #FF9D00;
+  --warning-light:      #FFF6E6;
+  --danger:             #FF3C5A;
+  --danger-light:       #FFF0F3;
+  --tertiary:           #FF6B35;
+  --tertiary-light:     rgba(255,107,53,.10);
 
   /* Surfaces */
-  --bg:                 #faf9f8;
-  --surface:            #ffffff;
-  --surface-low:        #f4f1ed;
-  --surface-mid:        #f1eee9;
-  --surface-high:       #e9e5e2;
-  --surface-highest:    #e4dedd;
+  --bg:                 #F7F8FA;
+  --surface:            #FFFFFF;
+  --surface-low:        #F2F4F7;
+  --surface-mid:        #ECEEF2;
+  --surface-high:       #E2E4EA;
+  --border:             #DFE1E6;
 
   /* Text */
-  --text:               #2d3432;
-  --text-muted:         #5f5954;
-  --outline:            #7c7570;
-  --outline-variant:    #b4aca4;
+  --text:               #1A1A1A;
+  --text-muted:         #6B7280;
+  --text-light:         #9CA3AF;
 
-  /* Radius — Stitch bento style */
-  --radius:             20px;
-  --radius-sm:          12px;
-  --radius-xs:          8px;
+  /* Radius — Wix style (clean, not too round) */
+  --radius:             12px;
+  --radius-sm:          8px;
+  --radius-xs:          6px;
   --radius-full:        9999px;
 
   /* Shadow */
-  --shadow:    0 1px 4px rgba(45,52,50,.06), 0 1px 2px rgba(45,52,50,.04);
-  --shadow-md: 0 4px 16px rgba(45,52,50,.08), 0 2px 4px rgba(45,52,50,.04);
-  --shadow-lg: 0 20px 50px rgba(45,52,50,.08);
+  --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+  --shadow-blue: 0 4px 14px rgba(17,109,255,.30);
 }
 
 /* ── Base ─────────────────────────────────────────────────── */
 html, body, [class*="css"] {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Wix Madefor Text', -apple-system, BlinkMacSystemFont, sans-serif !important;
   color: var(--text);
   background-color: var(--bg) !important;
 }
 
 h1, h2, h3, .page-title {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Wix Madefor Display', sans-serif !important;
 }
 
 /* Hide Streamlit chrome */
@@ -84,34 +81,34 @@ header[data-testid="stHeader"] { background: transparent; }
 
 /* ── Sidebar ──────────────────────────────────────────────── */
 section[data-testid="stSidebar"] {
-  background: #2c1f1a !important;
+  background: #000624 !important;
   border-right: none;
 }
-section[data-testid="stSidebar"] * { color: #c4b5af !important; }
+section[data-testid="stSidebar"] * { color: #9CA3AF !important; }
 
 .sidebar-brand {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Wix Madefor Display', sans-serif !important;
   font-size: 1.2rem;
   font-weight: 800;
   color: #fff !important;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
 }
 .sidebar-tagline {
   font-size: 0.75rem;
-  color: #7c6560 !important;
+  color: #4B5566 !important;
   margin-top: 2px;
 }
 
-/* Sidebar nav buttons — override Streamlit */
+/* Sidebar nav buttons */
 section[data-testid="stSidebar"] .stButton > button {
   border-radius: var(--radius-sm) !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   font-size: 0.85rem !important;
   text-align: left !important;
   transition: background .15s !important;
   background: transparent !important;
   border: none !important;
-  color: #a89590 !important;
+  color: #9CA3AF !important;
   padding: 10px 14px !important;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
@@ -131,23 +128,24 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   padding: 6px 10px;
   border-radius: var(--radius-xs);
   margin-bottom: 6px;
-  background: rgba(255,255,255,.05);
+  background: rgba(255,255,255,.04);
   font-size: 0.78rem;
+  border: 1px solid rgba(255,255,255,.06);
 }
-.stat-pill .label { color: #7c6560 !important; }
-.stat-pill .value { font-weight: 700; color: #e2d8d5 !important; }
+.stat-pill .label { color: #4B5566 !important; }
+.stat-pill .value { font-weight: 700; color: #E2E8F0 !important; }
 .stat-pill .value.warn   { color: var(--warning) !important; }
-.stat-pill .value.danger { color: #fd795a !important; }
+.stat-pill .value.danger { color: var(--danger) !important; }
 
 /* ── Page Headers ─────────────────────────────────────────── */
 .page-header { margin-bottom: 1.5rem; }
 .page-title {
   font-size: 1.75rem;
   font-weight: 800;
-  color: var(--primary);
+  color: var(--text);
   letter-spacing: -0.5px;
   margin: 0;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Wix Madefor Display', sans-serif !important;
 }
 .page-sub {
   font-size: 0.875rem;
@@ -160,17 +158,17 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--secondary-container);
-  border: 1px solid var(--primary-container);
+  background: var(--primary-light);
+  border: 1px solid rgba(17,109,255,.2);
   border-radius: var(--radius-sm);
   padding: 10px 16px;
   font-size: 0.82rem;
-  color: var(--on-primary-container);
+  color: var(--primary-dark);
   margin-bottom: 1.25rem;
   font-weight: 500;
 }
 
-/* ── Hero Stat Cards (Stitch bento style) ─────────────────── */
+/* ── Hero Stat Cards ──────────────────────────────────────── */
 .hero-row {
   display: flex;
   gap: 16px;
@@ -184,7 +182,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   border-radius: var(--radius);
   padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow);
-  border: 1px solid var(--surface-high);
+  border: 1px solid var(--border);
   transition: transform .15s, box-shadow .15s;
   position: relative;
   overflow: hidden;
@@ -198,7 +196,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: var(--outline-variant);
+  background: var(--border);
   border-radius: var(--radius) var(--radius) 0 0;
 }
 .hero-card.primary::before { background: var(--primary); }
@@ -213,7 +211,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   line-height: 1;
   margin-bottom: 4px;
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Wix Madefor Display', sans-serif;
 }
 .hero-card.primary .hc-value { color: var(--primary); }
 .hero-card.success .hc-value { color: var(--success); }
@@ -232,12 +230,12 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   letter-spacing: 0.2px;
   white-space: nowrap;
 }
-.badge-fresh   { background: var(--success-light); color: #065F46; }
-.badge-soon    { background: var(--warning-light);  color: #78350F; }
-.badge-low     { background: var(--tertiary-light);  color: var(--tertiary); }
-.badge-expired { background: var(--danger-light);   color: #991B1B; }
-.badge-primary { background: var(--secondary-container); color: var(--primary-dark); }
-.badge-gray    { background: var(--surface-high); color: var(--text-muted); }
+.badge-fresh   { background: var(--success-light); color: #00845A; }
+.badge-soon    { background: var(--warning-light);  color: #C47A00; }
+.badge-low     { background: var(--tertiary-light); color: var(--tertiary); }
+.badge-expired { background: var(--danger-light);   color: #CC1F3D; }
+.badge-primary { background: var(--primary-light);  color: var(--primary-dark); }
+.badge-gray    { background: var(--surface-mid);    color: var(--text-muted); }
 
 /* ── Item Cards ───────────────────────────────────────────── */
 .item-card {
@@ -245,13 +243,13 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   border-radius: var(--radius);
   padding: 1rem 1.25rem;
   box-shadow: var(--shadow);
-  border: 1px solid var(--surface-high);
+  border: 1px solid var(--border);
   margin-bottom: 12px;
   transition: box-shadow .15s, transform .15s;
 }
 .item-card:hover {
   box-shadow: var(--shadow-md);
-  transform: scale(1.005);
+  transform: scale(1.003);
 }
 .item-name { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 .item-qty  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
@@ -277,7 +275,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 
 /* ── Upload Zone ──────────────────────────────────────────── */
 .upload-zone {
-  border: 2px dashed var(--primary-container);
+  border: 2px dashed var(--border);
   border-radius: var(--radius);
   padding: 3rem 2rem;
   text-align: center;
@@ -286,7 +284,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 }
 .upload-zone:hover {
   border-color: var(--primary);
-  background: var(--secondary-container);
+  background: var(--primary-light);
 }
 .upload-icon { font-size: 2.5rem; margin-bottom: 12px; }
 .upload-text { font-size: 1rem; font-weight: 600; color: var(--primary); }
@@ -301,7 +299,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   border-radius: var(--radius);
   padding: 1rem 1.5rem;
   box-shadow: var(--shadow);
-  border: 1px solid var(--surface-high);
+  border: 1px solid var(--border);
 }
 .wizard-step {
   display: flex;
@@ -317,26 +315,26 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .step-num {
   width: 26px; height: 26px;
   border-radius: var(--radius-full);
-  background: var(--surface-high);
+  background: var(--surface-mid);
   color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
 }
 .wizard-step.active .step-num { background: var(--primary);  color: #fff; }
 .wizard-step.done   .step-num { background: var(--success);  color: #fff; }
-.step-sep { flex: 1; height: 1px; background: var(--surface-high); margin: 0 8px; }
+.step-sep { flex: 1; height: 1px; background: var(--border); margin: 0 8px; }
 
-/* ── Recipe Cards (Stitch bento) ──────────────────────────── */
+/* ── Recipe Cards ─────────────────────────────────────────── */
 .recipe-card {
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
   margin-bottom: 1.5rem;
-  border: 1px solid var(--surface-high);
+  border: 1px solid var(--border);
 }
 .recipe-header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #0B52C4 100%);
   padding: 1.25rem 1.5rem;
 }
 .recipe-title {
@@ -344,7 +342,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   font-weight: 700;
   color: #fff !important;
   margin: 0;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Wix Madefor Display', sans-serif;
 }
 .recipe-time  { font-size: 0.8rem; color: rgba(255,255,255,.75); margin-top: 4px; }
 .recipe-body  { padding: 1.25rem 1.5rem; }
@@ -361,7 +359,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   padding: 10px 14px;
   font-size: 0.82rem;
-  color: #78350F;
+  color: #9A5E00;
   margin-top: 1rem;
 }
 
@@ -380,7 +378,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .alert-countdown {
   font-size: 1.5rem; font-weight: 800;
   color: var(--danger); line-height: 1;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Wix Madefor Display', sans-serif;
 }
 .alert-countdown.warn { color: var(--warning); }
 
@@ -388,12 +386,12 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .prediction-card {
   background: var(--surface);
   border-radius: var(--radius);
-  border-left: 4px solid var(--primary-container);
+  border-left: 4px solid var(--primary-light);
   padding: 1rem 1.25rem;
   box-shadow: var(--shadow);
   margin-bottom: 12px;
 }
-.prediction-card.high { border-left-color: var(--danger); }
+.prediction-card.high   { border-left-color: var(--danger); }
 .prediction-card.medium { border-left-color: var(--warning); }
 
 /* ── Section Title ────────────────────────────────────────── */
@@ -406,23 +404,24 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   margin-bottom: 12px;
 }
 
-/* ── Buttons (Stitch pill style) ──────────────────────────── */
+/* ── Buttons (Wix style) ──────────────────────────────────── */
 .stButton > button {
   border-radius: var(--radius-sm) !important;
   font-weight: 600 !important;
   font-size: 0.875rem !important;
   transition: all .15s !important;
+  font-family: 'Wix Madefor Text', sans-serif !important;
 }
 .stButton > button[kind="primary"] {
   background: var(--primary) !important;
   border-color: var(--primary) !important;
-  color: var(--on-primary) !important;
+  color: #fff !important;
 }
 .stButton > button[kind="primary"]:hover {
   background: var(--primary-dark) !important;
   border-color: var(--primary-dark) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(141,110,99,.35) !important;
+  box-shadow: var(--shadow-blue) !important;
 }
 
 /* ── Streamlit widget overrides ───────────────────────────── */
@@ -433,12 +432,12 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 div[data-testid="stMetricValue"] {
   font-size: 1.5rem !important;
   font-weight: 800 !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Wix Madefor Display', sans-serif !important;
 }
 
-/* ── Pantry Shelf (Stitch-toned wood) ────────────────────── */
+/* ── Pantry Shelf ─────────────────────────────────────────── */
 .pantry-unit {
-  background: #1e140f;
+  background: #0D0D1A;
   border-radius: var(--radius);
   padding: 20px 20px 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,.30);
@@ -449,7 +448,7 @@ div[data-testid="stMetricValue"] {
   font-weight: 800;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #a07060;
+  color: #5B6A8A;
   margin-bottom: 8px;
   padding-left: 4px;
   display: flex;
@@ -467,10 +466,10 @@ div[data-testid="stMetricValue"] {
 }
 
 .shelf-plank {
-  background: linear-gradient(180deg, #b07850 0%, #8d5c38 50%, #6b4226 100%);
+  background: linear-gradient(180deg, #2A3050 0%, #1A2040 50%, #0F1530 100%);
   height: 10px;
   border-radius: 3px;
-  box-shadow: 0 5px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
+  box-shadow: 0 5px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
   margin-bottom: 20px;
 }
 
@@ -507,10 +506,10 @@ div[data-testid="stMetricValue"] {
   margin-top: 5px; padding: 2px 6px;
   border-radius: var(--radius-full);
 }
-.pt-days.fresh   { background: var(--success-light); color: #065F46; }
-.pt-days.soon    { background: var(--warning-light);  color: #78350F; }
-.pt-days.low     { background: var(--tertiary-light);  color: var(--tertiary); }
-.pt-days.expired { background: var(--danger-light);   color: #991B1B; }
+.pt-days.fresh   { background: var(--success-light); color: #00845A; }
+.pt-days.soon    { background: var(--warning-light);  color: #C47A00; }
+.pt-days.low     { background: var(--tertiary-light); color: var(--tertiary); }
+.pt-days.expired { background: var(--danger-light);   color: #CC1F3D; }
 
 /* ── Dataframe overrides ──────────────────────────────────── */
 [data-testid="stDataFrame"] {
@@ -522,7 +521,7 @@ div[data-testid="stMetricValue"] {
 /* ── Expander ─────────────────────────────────────────────── */
 [data-testid="stExpander"] {
   border-radius: var(--radius-sm) !important;
-  border: 1px solid var(--surface-high) !important;
+  border: 1px solid var(--border) !important;
   background: var(--surface) !important;
 }
 
