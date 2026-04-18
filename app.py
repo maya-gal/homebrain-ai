@@ -13,7 +13,7 @@ from database import (
     add_to_shopping_list, get_smart_predictions, get_inventory_predictions,
     get_staple_list, add_staple, remove_staple, get_missing_staples,
 )
-from product_images import get_product_image
+from product_images import get_product_image, _PRODUCT_EMOJIS, _CATEGORY_EMOJI
 from components import (
     page_header, demo_banner, hero_cards, wizard_steps,
     item_card_html, recipe_card, upload_zone_hint,
@@ -240,6 +240,13 @@ CATEGORY_ICONS = {
     "Personal Care":"🧴", "Other":        "📦",
 }
 
+def _product_emoji(product_name: str, category: str) -> str:
+    name = product_name.lower().strip()
+    if name in _PRODUCT_EMOJIS:
+        return _PRODUCT_EMOJIS[name]
+    best = max((k for k in _PRODUCT_EMOJIS if k in name), key=len, default="")
+    return _PRODUCT_EMOJIS[best] if best else _CATEGORY_EMOJI.get(category, "📦")
+
 def _render_items_preview(items: list[dict], cache_key: str, user: str, store: str = None) -> None:
     """Shared preview table + save button for all 3 input modes."""
     if not items:
@@ -383,27 +390,44 @@ def page_mazava(user: str) -> None:
     with st.expander(f"✅  Must Have  {'🔴 ' + str(len(missing_staples)) + ' missing' if missing_staples else '✅ all stocked'}", expanded=bool(missing_staples)):
         if missing_staples:
             section_title(f"MISSING FROM PANTRY — {len(missing_staples)} ITEMS")
-            for s in missing_staples:
-                c1, c2, c3 = st.columns([4, 1.5, 1.5])
-                emoji = CATEGORY_ICONS.get(s["category"], "📦")
-                c1.markdown(f'<span style="font-size:1.2rem;margin-right:6px;vertical-align:middle">{emoji}</span><span style="font-weight:700">{s["product_name"]}</span> <span style="color:#6B7280;font-size:0.8rem">{s["category"]}</span>', unsafe_allow_html=True)
-                if c2.button("🛒 Add to list", key=f"staple_shop_{s['id']}", use_container_width=True):
-                    add_to_shopping_list(s["product_name"], s["category"])
-                    st.toast(f"'{s['product_name']}' added to shopping list!", icon="🛒")
-                if c3.button("Remove", key=f"staple_rm_{s['id']}", use_container_width=True):
-                    remove_staple(s["id"])
-                    st.rerun()
+            cols_m = st.columns(3)
+            for i, s in enumerate(missing_staples):
+                with cols_m[i % 3]:
+                    emoji = _product_emoji(s["product_name"], s["category"])
+                    st.markdown(
+                        f'<div style="background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:16px;'
+                        f'padding:14px 16px;margin-bottom:10px">'
+                        f'<div style="font-size:1.8rem;margin-bottom:6px">{emoji}</div>'
+                        f'<div style="font-weight:800;font-size:0.92rem;color:#1E1033">{s["product_name"]}</div>'
+                        f'<div style="font-size:0.72rem;color:#9CA3AF;margin-top:2px">{s["category"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                    ca, cb = st.columns(2)
+                    if ca.button("🛒", key=f"staple_shop_{s['id']}", use_container_width=True, help="Add to shopping list"):
+                        add_to_shopping_list(s["product_name"], s["category"])
+                        st.toast(f"'{s['product_name']}' added to shopping list!", icon="🛒")
+                    if cb.button("✕", key=f"staple_rm_{s['id']}", use_container_width=True, help="Remove from Must Have"):
+                        remove_staple(s["id"])
+                        st.rerun()
             st.markdown("---")
 
         all_staples = get_staple_list()
         in_stock = [s for s in all_staples if s["product_name"].lower() not in {x["product_name"].lower() for x in missing_staples}]
         if in_stock:
-            section_title(f"IN STOCK — {len(in_stock)} MUST HAVE ITEMS")
-            cols = st.columns(4)
+            section_title(f"IN STOCK — {len(in_stock)} ITEMS")
+            cols_s = st.columns(4)
             for i, s in enumerate(in_stock):
-                with cols[i % 4]:
-                    emoji = CATEGORY_ICONS.get(s["category"], "📦")
-                    st.markdown(f'<div style="font-size:0.8rem;font-weight:600;margin-bottom:4px">{emoji} {s["product_name"]}</div>', unsafe_allow_html=True)
+                with cols_s[i % 4]:
+                    emoji = _product_emoji(s["product_name"], s["category"])
+                    st.markdown(
+                        f'<div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:14px;'
+                        f'padding:10px 12px;margin-bottom:8px;text-align:center">'
+                        f'<div style="font-size:1.4rem">{emoji}</div>'
+                        f'<div style="font-size:0.78rem;font-weight:700;color:#1E1033;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{s["product_name"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
                     if st.button("✕", key=f"staple_del_{s['id']}", use_container_width=True):
                         remove_staple(s["id"])
                         st.rerun()
