@@ -28,7 +28,6 @@ st.set_page_config(
 st.markdown(get_css(), unsafe_allow_html=True)
 
 PAGES = [
-    ("📸", "Scan Receipt"),
     ("🫙", "Pantry"),
     ("🛒", "Shopping List"),
     ("🍳", "Meal Planner"),
@@ -61,7 +60,7 @@ def render_sidebar() -> tuple[str, str]:
         st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 
         if "page" not in st.session_state:
-            st.session_state.page = "Scan Receipt"
+            st.session_state.page = "Pantry"
 
         for icon, label in PAGES:
             active = st.session_state.page == label
@@ -265,7 +264,8 @@ def page_mazava(user: str) -> None:
     demo_banner(is_demo())
 
     # ── Add products panel — 3 modes ─────────────────────────
-    with st.expander("➕  Add Products to Pantry", expanded=False):
+    _has_items = bool(get_all_items())
+    with st.expander("📸  Scan Receipt / Add Products", expanded=not _has_items):
         tab_receipt, tab_text, tab_voice = st.tabs(["📸 Receipt", "✍️ Free Text", "🎤 Voice Recording"])
 
         # ── TAB 1: Receipt image ──────────────────────────────
@@ -573,9 +573,7 @@ def page_ai_predictions() -> None:
 def main() -> None:
     page, user = render_sidebar()
 
-    if page == "Scan Receipt":
-        page_scan_receipt(user)
-    elif page == "Pantry":
+    if page == "Pantry":
         page_mazava(user)
     elif page == "Shopping List":
         shopping_list_page.render(is_demo())
