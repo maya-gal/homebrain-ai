@@ -408,49 +408,77 @@ def page_mazava(user: str) -> None:
                 st.toast(f"'{s_name}' added to Must Have!" if added else f"'{s_name}' is already in Must Have.", icon="✅")
                 st.rerun()
 
-    col_search, col_cat = st.columns([3, 1])
-    with col_search:
-        query = st.text_input("🔍 Search items", placeholder="e.g. milk, chicken...")
-    with col_cat:
-        cats = ["All"] + get_categories()
-        cat_filter = st.selectbox("Category", cats, label_visibility="collapsed")
+    query = st.text_input("🔍 Search items", placeholder="e.g. milk, chocolate, chicken...")
 
-    if query:
-        items = search_items(query, cat_filter if cat_filter != "All" else "")
-    elif cat_filter and cat_filter != "All":
-        items = search_items("", cat_filter)
-    else:
-        items = get_all_items()
+    # Fetch all items then filter client-side so category shelf grouping still works
+    all_pantry = get_all_items()
 
-    if not items:
-        if query or (cat_filter and cat_filter != "All"):
-            st.info(f"No results found for '{query or cat_filter}'.")
-        else:
-            st.info("No items in your food yet. Scan a receipt to get started!")
-        return
-
-    # Separate in-stock vs zero-quantity items
     def _is_zero_qty(qty: str) -> bool:
         try:
             return float(qty.split()[0]) == 0
         except (ValueError, IndexError):
             return qty.strip() == "0"
 
-    in_stock_items  = [it for it in items if not _is_zero_qty(it["quantity"])]
-    out_of_stock    = [it for it in items if _is_zero_qty(it["quantity"])]
+    if query:
+        q = query.lower()
+        filtered = [it for it in all_pantry if q in it["product_name"].lower() or q in it["category"].lower()]
+        if not filtered:
+            st.info(f"No results found for '{query}'.")
+            return
+        # Show flat search results
+        predictions = get_inventory_predictions()
+        section_title(f"SEARCH RESULTS — {len(filtered)} ITEMS")
+        cols = st.columns(3)
+        for i, item in enumerate(filtered):
+            if _is_zero_qty(item["quantity"]):
+                continue
+            with cols[i % 3]:
+                pred = predictions.get(item["product_name"].lower(), "")
+                st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
+                if st.button("🗑️ Remove", key=f"del_s_{item['id']}", use_container_width=True):
+                    delete_item(item["id"])
+                    st.rerun()
+        return
 
-    # Fetch AI predictions for inline display
+    # ── Shelf view: grouped by category ──────────────────────
+    in_stock_items = [it for it in all_pantry if not _is_zero_qty(it["quantity"])]
+    out_of_stock   = [it for it in all_pantry if _is_zero_qty(it["quantity"])]
+
+    if not in_stock_items and not out_of_stock:
+        st.info("No items in your food yet. Scan a receipt to get started!")
+        return
+
     predictions = get_inventory_predictions()
 
-    section_title(f"FOOD — {len(in_stock_items)} ITEMS")
-    cols = st.columns(3)
-    for i, item in enumerate(in_stock_items):
-        with cols[i % 3]:
-            pred = predictions.get(item["product_name"].lower(), "")
-            st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
-            if st.button("🗑️ Remove", key=f"del_{item['id']}", use_container_width=True):
-                delete_item(item["id"])
-                st.rerun()
+    # Group by category in a defined order
+    SHELF_ORDER = ["Produce", "Dairy", "Meat & Fish", "Bakery", "Frozen",
+                   "Beverages", "Pantry", "Snacks", "Household", "Personal Care", "Other"]
+    by_cat: dict[str, list] = {}
+    for item in in_stock_items:
+        by_cat.setdefault(item["category"], []).append(item)
+
+    for cat in SHELF_ORDER:
+        items_in_cat = by_cat.get(cat, [])
+        if not items_in_cat:
+            continue
+        icon = CATEGORY_ICONS.get(cat, "📦")
+        st.markdown(f"""
+        <div style="display:flex;align-items:center;gap:10px;margin:22px 0 10px">
+            <span style="font-size:1.4rem">{icon}</span>
+            <span style="font-size:0.75rem;font-weight:800;letter-spacing:1.5px;
+                         color:#6B7280;text-transform:uppercase">{cat}</span>
+            <div style="flex:1;height:1px;background:#E5E7EB"></div>
+            <span style="font-size:0.72rem;color:#9CA3AF">{len(items_in_cat)} items</span>
+        </div>
+        """, unsafe_allow_html=True)
+        cols = st.columns(3)
+        for i, item in enumerate(items_in_cat):
+            with cols[i % 3]:
+                pred = predictions.get(item["product_name"].lower(), "")
+                st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
+                if st.button("🗑️ Remove", key=f"del_{item['id']}", use_container_width=True):
+                    delete_item(item["id"])
+                    st.rerun()
 
     # ── Out of Stock ──────────────────────────────────────────
     if out_of_stock:
