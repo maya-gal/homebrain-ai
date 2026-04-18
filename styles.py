@@ -6,7 +6,7 @@ Inspired by Wix.com design language: Wix Madefor font, #116DFF blue, clean white
 def get_css() -> str:
     return """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800&display=swap');
 
 /* ── Design Tokens (Wix-inspired) ────────────────────────── */
 :root {
@@ -58,13 +58,13 @@ def get_css() -> str:
 
 /* ── Base ─────────────────────────────────────────────────── */
 html, body, [class*="css"] {
-  font-family: 'Wix Madefor Text', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
   color: var(--text);
   background-color: var(--bg) !important;
 }
 
 h1, h2, h3, .page-title {
-  font-family: 'Wix Madefor Display', sans-serif !important;
+  font-family: 'Urbanist', sans-serif !important;
 }
 
 /* Hide Streamlit chrome */
@@ -87,7 +87,7 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] * { color: #9CA3AF !important; }
 
 .sidebar-brand {
-  font-family: 'Wix Madefor Display', sans-serif !important;
+  font-family: 'Urbanist', sans-serif !important;
   font-size: 1.2rem;
   font-weight: 800;
   color: #fff !important;
@@ -145,7 +145,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   color: var(--text);
   letter-spacing: -0.5px;
   margin: 0;
-  font-family: 'Wix Madefor Display', sans-serif !important;
+  font-family: 'Urbanist', sans-serif !important;
 }
 .page-sub {
   font-size: 0.875rem;
@@ -211,7 +211,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   line-height: 1;
   margin-bottom: 4px;
   color: var(--text);
-  font-family: 'Wix Madefor Display', sans-serif;
+  font-family: 'Urbanist', sans-serif;
 }
 .hero-card.primary .hc-value { color: var(--primary); }
 .hero-card.success .hc-value { color: var(--success); }
@@ -342,7 +342,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   font-weight: 700;
   color: #fff !important;
   margin: 0;
-  font-family: 'Wix Madefor Display', sans-serif;
+  font-family: 'Urbanist', sans-serif;
 }
 .recipe-time  { font-size: 0.8rem; color: rgba(255,255,255,.75); margin-top: 4px; }
 .recipe-body  { padding: 1.25rem 1.5rem; }
@@ -378,7 +378,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .alert-countdown {
   font-size: 1.5rem; font-weight: 800;
   color: var(--danger); line-height: 1;
-  font-family: 'Wix Madefor Display', sans-serif;
+  font-family: 'Urbanist', sans-serif;
 }
 .alert-countdown.warn { color: var(--warning); }
 
@@ -410,7 +410,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   font-weight: 600 !important;
   font-size: 0.875rem !important;
   transition: all .15s !important;
-  font-family: 'Wix Madefor Text', sans-serif !important;
+  font-family: 'Nunito', sans-serif !important;
 }
 .stButton > button[kind="primary"] {
   background: var(--primary) !important;
@@ -432,7 +432,7 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 div[data-testid="stMetricValue"] {
   font-size: 1.5rem !important;
   font-weight: 800 !important;
-  font-family: 'Wix Madefor Display', sans-serif !important;
+  font-family: 'Urbanist', sans-serif !important;
 }
 
 /* ── Pantry Shelf ─────────────────────────────────────────── */
