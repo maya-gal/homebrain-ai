@@ -7,7 +7,6 @@ import streamlit as st
 
 
 # ── Page Header ──────────────────────────────────────────────
-
 def page_header(title: str, subtitle: str) -> None:
     st.markdown(f"""
     <div class="page-header">
@@ -18,25 +17,23 @@ def page_header(title: str, subtitle: str) -> None:
 
 
 # ── Demo Banner ───────────────────────────────────────────────
-
 def demo_banner(is_demo: bool) -> None:
     if is_demo:
         st.markdown("""
         <div class="demo-banner">
             🎬 <strong>Demo Mode</strong> &nbsp;—&nbsp;
-            Running with mock AI data. Add <code>OPENAI_API_KEY</code> to <code>.env</code> to go live.
+            Running with mock AI data. Add <code>GEMINI_API_KEY</code> to <code>.env</code> to go live.
         </div>
         """, unsafe_allow_html=True)
 
 
 # ── Hero Stat Cards ───────────────────────────────────────────
-
 def hero_cards(stats: dict) -> None:
     cards = [
-        ("primary", "📦", stats.get("total", 0),         "Total Items"),
-        ("success", "✅", stats.get("fresh", 0),          "Fresh"),
-        ("warning", "⏳", stats.get("expiring_soon", 0),  "Running Low"),
-        ("danger",  "🗑", stats.get("expired", 0),        "Expired"),
+        ("primary", "📦", stats.get("total", 0),        "Total Items"),
+        ("success", "✅", stats.get("fresh", 0),         "Fresh"),
+        ("warning", "⏳", stats.get("expiring_soon", 0), "Running Low"),
+        ("danger",  "🗑", stats.get("expired", 0),       "Expired"),
     ]
     html = '<div class="hero-row">'
     for variant, icon, value, label in cards:
@@ -51,7 +48,6 @@ def hero_cards(stats: dict) -> None:
 
 
 # ── Status Badge ──────────────────────────────────────────────
-
 def status_badge(status: str) -> str:
     mapping = {
         "Fresh":       "badge-fresh",
@@ -72,7 +68,6 @@ def user_badge(user: str) -> str:
 
 
 # ── Shelf Life Bar ─────────────────────────────────────────────
-
 def shelf_bar(days_remaining: int, shelf_life_days: int, status: str) -> str:
     pct = min(100, round(days_remaining / max(shelf_life_days, 1) * 100))
     cls_map = {
@@ -91,7 +86,6 @@ def shelf_bar(days_remaining: int, shelf_life_days: int, status: str) -> str:
 
 
 # ── Item Card ─────────────────────────────────────────────────
-
 def item_card_html(item: dict) -> str:
     return f"""
     <div class="item-card">
@@ -111,7 +105,6 @@ def item_card_html(item: dict) -> str:
 
 
 # ── Wizard Steps ──────────────────────────────────────────────
-
 def wizard_steps(current: int) -> None:
     """current: 1=Upload, 2=Analyzing, 3=Review, 4=Saved"""
     steps = ["Upload", "Analyzing", "Review", "Saved"]
@@ -139,7 +132,6 @@ def wizard_steps(current: int) -> None:
 
 
 # ── Recipe Card ───────────────────────────────────────────────
-
 def recipe_card(recipe: dict, index: int) -> None:
     name  = recipe.get("name", "Recipe")
     mins  = recipe.get("prep_time_minutes", "?")
@@ -161,7 +153,7 @@ def recipe_card(recipe: dict, index: int) -> None:
             <div class="recipe-time">⏱ {mins} minutes prep</div>
         </div>
         <div class="recipe-body">
-            <div class="section-title">Uses from your pantry</div>
+            <div class="section-title">Uses from your food</div>
             <div class="recipe-ingredients">{ingredient_badges}</div>
             <div class="section-title">Instructions</div>
             <div class="recipe-steps"><ol>{steps_html}</ol></div>
@@ -172,7 +164,6 @@ def recipe_card(recipe: dict, index: int) -> None:
 
 
 # ── Upload Zone ───────────────────────────────────────────────
-
 def upload_zone_hint() -> None:
     st.markdown("""
     <div class="upload-zone">
@@ -185,7 +176,6 @@ def upload_zone_hint() -> None:
 
 
 # ── Alert Card (Running Low) ──────────────────────────────────
-
 def alert_card_html(item: dict) -> str:
     is_expired = item["days_remaining"] == 0
     card_cls   = "alert-card" if is_expired else "alert-card warn"
@@ -204,7 +194,6 @@ def alert_card_html(item: dict) -> str:
 
 
 # ── Prediction Card ───────────────────────────────────────────
-
 def prediction_card_html(pred: dict) -> str:
     urgency_cls = "badge-low" if pred["urgency"] == "High" else "badge-soon"
     return f"""
@@ -223,6 +212,5 @@ def prediction_card_html(pred: dict) -> str:
 
 
 # ── Section Title ─────────────────────────────────────────────
-
 def section_title(text: str) -> None:
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)

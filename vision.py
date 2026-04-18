@@ -26,7 +26,7 @@ SHELF LIFE ESTIMATION RULES:
 - Snacks: 30–90 days
 
 CATEGORY TAXONOMY — use ONLY these values:
-Produce | Dairy | Meat & Fish | Bakery | Frozen | Pantry | Beverages | Snacks | Household | Personal Care | Other
+Produce | Dairy | Meat & Fish | Bakery | Frozen | Food | Beverages | Snacks | Household | Personal Care | Other
 
 OUTPUT SCHEMA (return ONLY this JSON, nothing else):
 {
