@@ -88,13 +88,7 @@ def shelf_bar(days_remaining: int, shelf_life_days: int, status: str) -> str:
 
 # ── Item Card ─────────────────────────────────────────────────
 def item_card_html(item: dict, prediction: str = "") -> str:
-    img_url = get_product_image(item['product_name'], item['category'])
-    img_html = (
-        f'<img src="{img_url}" class="item-thumb" alt="{item["product_name"]}" '
-        f'onerror="this.style.display=\'none\'">'
-        if img_url else
-        f'<div class="item-thumb item-thumb-emoji">{_category_emoji(item["category"])}</div>'
-    )
+    img_html = get_product_image(item['product_name'], item['category'])
     prediction_html = (
         f'<div class="item-prediction">🔮 Prediction: {prediction}</div>'
         if prediction else ""

@@ -296,9 +296,27 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
   gap: 14px;
   margin-bottom: 10px;
 }
-.item-name { font-size: 0.95rem; font-weight: 800; color: var(--text); }
+.item-name { font-size: 0.95rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item-qty  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
 .item-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+/* ── Remove button fused to bottom of item card ──────────── */
+[data-testid="stMarkdownContainer"]:has(.item-card) .item-card {
+  margin-bottom: 0 !important;
+  border-radius: 14px 14px 0 0 !important;
+  border-bottom: none !important;
+}
+[data-testid="stMarkdownContainer"]:has(.item-card) + [data-testid="stButton"] > button {
+  border-radius: 0 0 14px 14px !important;
+  border-top: none !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
+  background: #FEF2F2 !important;
+  color: #991B1B !important;
+  border-color: var(--border) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
 .item-prediction {
   font-size: 0.72rem;
   color: #7C3AED;

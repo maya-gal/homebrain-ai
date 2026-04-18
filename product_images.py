@@ -1,170 +1,130 @@
 """
-product_images.py — Maps product names and categories to food photo URLs.
-Uses Spoonacular's free ingredient CDN (no API key needed).
+product_images.py — Maps product names to emoji + gradient background.
+No external CDN — always loads instantly.
 """
 
-_BASE = "https://spoonacular.com/cdn/ingredients_100x100/"
-
-# ── Per-product overrides (keyword → filename) ────────────────
-_PRODUCT_MAP: dict[str, str] = {
-    # Dairy
-    "milk":         "milk.jpg",
-    "whole milk":   "milk.jpg",
-    "eggs":         "egg.jpg",
-    "egg":          "egg.jpg",
-    "yogurt":       "plain-yogurt.jpg",
-    "greek yogurt": "plain-yogurt.jpg",
-    "cheddar":      "cheddar-cheese.jpg",
-    "cheese":       "cheddar-cheese.jpg",
-    "butter":       "butter.jpg",
-    "cream":        "heavy-cream.jpg",
-    "sour cream":   "sour-cream.jpg",
-    # Produce
-    "sweet potato":  "sweet-potato.jpg",
-    "sweet potatoes":"sweet-potato.jpg",
-    "yam":           "sweet-potato.jpg",
-    "corn":          "corn.jpg",
-    "celery":        "celery.jpg",
-    "cabbage":       "cabbage.jpg",
-    "eggplant":      "eggplant.jpg",
-    "cauliflower":   "cauliflower.jpg",
-    "asparagus":     "asparagus.jpg",
-    "blueberry":     "blueberries.jpg",
-    "blueberries":   "blueberries.jpg",
-    "grapes":        "grapes.jpg",
-    "watermelon":    "watermelon.jpg",
-    "pineapple":     "pineapple.jpg",
-    "mango":         "mango.jpg",
-    "peach":         "peach.jpg",
-    "pear":          "pear.jpg",
-    "spinach":      "spinach.jpg",
-    "baby spinach": "spinach.jpg",
-    "tomato":       "tomato.jpg",
-    "tomatoes":     "tomatoes.jpg",
-    "roma tomato":  "tomatoes.jpg",
-    "cherry tomato":"cherry-tomatoes.jpg",
-    "avocado":      "avocado.jpg",
-    "banana":       "bananas.jpg",
-    "bananas":      "bananas.jpg",
-    "carrot":       "carrots.jpg",
-    "carrots":      "carrots.jpg",
-    "onion":        "white-onion.jpg",
-    "garlic":       "garlic.jpg",
-    "potato":       "russet-potatoes.jpg",
-    "potatoes":     "russet-potatoes.jpg",
-    "lettuce":      "romaine-lettuce.jpg",
-    "cucumber":     "cucumber.jpg",
-    "bell pepper":  "bell-pepper-red.jpg",
-    "lemon":        "lemon.jpg",
-    "lime":         "lime.jpg",
-    "apple":        "apple.jpg",
-    "apples":       "apple.jpg",
-    "orange":       "navel-oranges.jpg",
-    "strawberry":   "strawberries.jpg",
-    "strawberries": "strawberries.jpg",
-    "broccoli":     "broccoli.jpg",
-    "zucchini":     "zucchini.jpg",
-    "mushroom":     "mushrooms.jpg",
-    "mushrooms":    "mushrooms.jpg",
-    # Meat & Fish
-    "chicken":      "chicken-breasts.jpg",
-    "chicken breast":"chicken-breasts.jpg",
-    "ground beef":  "ground-beef.jpg",
-    "beef":         "beef-cubes-raw.jpg",
-    "salmon":       "salmon.jpg",
-    "tuna":         "canned-tuna.jpg",
-    "shrimp":       "shrimp.jpg",
-    "turkey":       "turkey-breast.jpg",
-    "lamb":         "lamb-chops.jpg",
-    # Bakery
-    "bread":        "bread.jpg",
-    "sourdough":    "bread.jpg",
-    "pita":         "pita-bread.jpg",
-    "bagel":        "bagel.jpg",
-    "croissant":    "croissant.jpg",
-    "muffin":       "blueberry-muffins.jpg",
-    # Pantry
-    "pasta":        "penne-pasta.jpg",
-    "penne":        "penne-pasta.jpg",
-    "spaghetti":    "spaghetti.jpg",
-    "fusilli":      "penne-pasta.jpg",
-    "rice":         "uncooked-white-rice.jpg",
-    "flour":        "flour.jpg",
-    "sugar":        "sugar.jpg",
-    "olive oil":    "olive-oil.jpg",
-    "salt":         "salt.jpg",
-    "pepper":       "pepper.jpg",
-    "honey":        "honey.jpg",
-    "ketchup":      "ketchup.jpg",
-    "mustard":      "dijon-mustard.jpg",
-    "crushed tomato":"tomato-sauce.jpg",
-    "tomato sauce": "tomato-sauce.jpg",
-    "canned tomato":"tomato-sauce.jpg",
-    "oats":         "rolled-oats.jpg",
-    "cereal":       "granola.jpg",
-    # Frozen
-    "frozen peas":  "peas.jpg",
-    "peas":         "peas.jpg",
-    "frozen corn":  "corn.jpg",
-    "ice cream":    "vanilla-ice-cream.jpg",
-    # Beverages
-    "orange juice": "orange-juice.jpg",
-    "juice":        "orange-juice.jpg",
-    "coffee":       "coffee.jpg",
-    "tea":          "tea-bags.jpg",
-    "water":        "water.jpg",
-    "almond milk":  "almond-milk.jpg",
-    "oat milk":     "oat-milk.jpg",
-    "soy milk":     "soy-milk.jpg",
-    # Snacks
-    "chips":        "potato-chips.jpg",
-    "crackers":     "crackers.jpg",
-    "nuts":         "mixed-nuts.jpg",
-    "almonds":      "almonds.jpg",
-    "peanut butter":"peanut-butter.jpg",
-    "chocolate":    "dark-chocolate.jpg",
-    # Condiments / Extra
-    "mayonnaise":   "mayonnaise.jpg",
-    "vinegar":      "white-wine-vinegar.jpg",
-    "soy sauce":    "soy-sauce.jpg",
-    "tahini":       "tahini.jpg",
+# ── Gradient backgrounds per category ────────────────────────
+CATEGORY_GRADIENTS: dict[str, str] = {
+    "Produce":      "linear-gradient(135deg,#86efac,#4ade80)",
+    "Dairy":        "linear-gradient(135deg,#bae6fd,#60a5fa)",
+    "Meat & Fish":  "linear-gradient(135deg,#fca5a5,#f87171)",
+    "Bakery":       "linear-gradient(135deg,#fde68a,#f59e0b)",
+    "Frozen":       "linear-gradient(135deg,#c7d2fe,#818cf8)",
+    "Pantry":       "linear-gradient(135deg,#fed7aa,#fb923c)",
+    "Beverages":    "linear-gradient(135deg,#a5f3fc,#22d3ee)",
+    "Snacks":       "linear-gradient(135deg,#f9a8d4,#ec4899)",
+    "Household":    "linear-gradient(135deg,#d1d5db,#9ca3af)",
+    "Personal Care":"linear-gradient(135deg,#e9d5ff,#c084fc)",
+    "Other":        "linear-gradient(135deg,#e2e8f0,#94a3b8)",
 }
 
-# ── Category fallbacks ────────────────────────────────────────
-_CATEGORY_MAP: dict[str, str] = {
-    "Dairy":        "milk.jpg",
-    "Produce":      "mixed-vegetables.jpg",
-    "Meat & Fish":  "chicken-breasts.jpg",
-    "Bakery":       "bread.jpg",
-    "Frozen":       "peas.jpg",
-    "Pantry":       "olive-oil.jpg",
-    "Beverages":    "orange-juice.jpg",
-    "Snacks":       "potato-chips.jpg",
-    "Household":    None,
-    "Personal Care":None,
-    "Other":        None,
+# ── Per-product emoji map (keyword → emoji) ───────────────────
+_PRODUCT_EMOJIS: dict[str, str] = {
+    # Dairy
+    "milk":          "🥛", "whole milk":    "🥛", "almond milk":   "🥛",
+    "oat milk":      "🥛", "soy milk":      "🥛",
+    "egg":           "🥚", "eggs":          "🥚",
+    "yogurt":        "🫙", "greek yogurt":  "🫙",
+    "cheese":        "🧀", "cheddar":       "🧀", "mozzarella":    "🧀",
+    "butter":        "🧈", "cream":         "🧈",
+    # Produce
+    "sweet potato":  "🍠", "yam":           "🍠",
+    "tomato":        "🍅", "tomatoes":      "🍅", "cherry tomato": "🍅",
+    "avocado":       "🥑",
+    "banana":        "🍌", "bananas":       "🍌",
+    "apple":         "🍎", "apples":        "🍎",
+    "orange":        "🍊",
+    "lemon":         "🍋", "lime":          "🍋",
+    "strawberry":    "🍓", "strawberries":  "🍓",
+    "grapes":        "🍇",
+    "watermelon":    "🍉",
+    "pineapple":     "🍍",
+    "mango":         "🥭",
+    "peach":         "🍑", "pear":          "🍐",
+    "blueberry":     "🫐", "blueberries":   "🫐",
+    "broccoli":      "🥦",
+    "carrot":        "🥕", "carrots":       "🥕",
+    "corn":          "🌽",
+    "pepper":        "🌶", "bell pepper":   "🫑",
+    "cucumber":      "🥒",
+    "lettuce":       "🥬", "spinach":       "🥬", "baby spinach":  "🥬",
+    "garlic":        "🧄",
+    "onion":         "🧅",
+    "potato":        "🥔", "potatoes":      "🥔",
+    "mushroom":      "🍄", "mushrooms":     "🍄",
+    "eggplant":      "🍆",
+    "zucchini":      "🥒",
+    # Meat & Fish
+    "chicken":       "🍗", "chicken breast":"🍗",
+    "beef":          "🥩", "steak":         "🥩", "ground beef":   "🥩",
+    "pork":          "🥩", "lamb":          "🥩",
+    "salmon":        "🐟", "tuna":          "🐟", "fish":          "🐟",
+    "shrimp":        "🍤",
+    # Bakery
+    "bread":         "🍞", "sourdough":     "🍞", "pita":          "🫓",
+    "bagel":         "🥯", "croissant":     "🥐", "muffin":        "🧁",
+    # Pantry
+    "pasta":         "🍝", "penne":         "🍝", "spaghetti":     "🍝",
+    "fusilli":       "🍝",
+    "rice":          "🍚",
+    "olive oil":     "🫒", "oil":           "🫒",
+    "honey":         "🍯",
+    "salt":          "🧂",
+    "tomato sauce":  "🥫", "crushed tomato":"🥫", "canned tomato": "🥫",
+    "ketchup":       "🍅",
+    "peanut butter": "🥜",
+    "chocolate":     "🍫",
+    "sugar":         "🍬",
+    "flour":         "🌾",
+    "oats":          "🌾", "cereal":        "🌾",
+    "tahini":        "🫙",
+    # Frozen
+    "peas":          "🫛", "frozen peas":   "🫛",
+    "ice cream":     "🍦",
+    # Beverages
+    "orange juice":  "🍊", "juice":         "🧃",
+    "coffee":        "☕", "tea":           "🍵",
+    "water":         "💧",
+    "soda":          "🥤", "cola":          "🥤",
+    "beer":          "🍺", "wine":          "🍷",
+    # Snacks
+    "chips":         "🥔", "crackers":      "🫙",
+    "nuts":          "🥜", "almonds":       "🥜",
+    "popcorn":       "🍿",
+    # Household / Personal Care
+    "soap":          "🧼", "dish soap":     "🧼",
+    "shampoo":       "🧴", "toothpaste":    "🪥",
+    "tissue":        "🧻", "paper towel":   "🧻",
+}
+
+# ── Category fallback emojis ──────────────────────────────────
+_CATEGORY_EMOJI: dict[str, str] = {
+    "Produce":      "🥬", "Dairy":        "🥛", "Meat & Fish":  "🥩",
+    "Bakery":       "🍞", "Frozen":       "🧊", "Pantry":       "🫙",
+    "Beverages":    "🧃", "Snacks":       "🍪", "Household":    "🧹",
+    "Personal Care":"🧴", "Other":        "📦",
 }
 
 
 def get_product_image(product_name: str, category: str = "") -> str | None:
-    """
-    Return a Spoonacular CDN image URL for the product, or None for non-food items.
-    Tries exact match → keyword match → category fallback.
-    """
+    """Returns an HTML string for the thumbnail (emoji + gradient bg), never None."""
     name_lower = product_name.lower().strip()
 
     # Exact match
-    if name_lower in _PRODUCT_MAP:
-        return _BASE + _PRODUCT_MAP[name_lower]
+    emoji = _PRODUCT_EMOJIS.get(name_lower)
 
-    # Keyword match (longest keyword wins)
-    best_key = ""
-    for key in _PRODUCT_MAP:
-        if key in name_lower and len(key) > len(best_key):
-            best_key = key
-    if best_key:
-        return _BASE + _PRODUCT_MAP[best_key]
+    # Keyword match (longest key wins)
+    if not emoji:
+        best_key = ""
+        for key in _PRODUCT_EMOJIS:
+            if key in name_lower and len(key) > len(best_key):
+                best_key = key
+        if best_key:
+            emoji = _PRODUCT_EMOJIS[best_key]
 
     # Category fallback
-    filename = _CATEGORY_MAP.get(category)
-    return (_BASE + filename) if filename else None
+    if not emoji:
+        emoji = _CATEGORY_EMOJI.get(category, "📦")
+
+    gradient = CATEGORY_GRADIENTS.get(category, CATEGORY_GRADIENTS["Other"])
+    return f'<div class="item-thumb item-thumb-emoji" style="background:{gradient}">{emoji}</div>'
