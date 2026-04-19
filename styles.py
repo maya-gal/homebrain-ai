@@ -292,6 +292,90 @@ section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
 .wizard-step.done   .step-num { background: var(--grad-green); color: #fff; }
 .step-sep { flex: 1; height: 1px; background: var(--border); margin: 0 8px; }
 
+/* ── Recipe Box (pantry box view) ────────────────────────── */
+.recipe-box-wrap {
+  background: linear-gradient(160deg, #3A1A08 0%, #2A1005 50%, #1A0804 100%);
+  border-radius: 20px;
+  padding: 0 20px 0;
+  box-shadow: 0 12px 48px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+  overflow: visible;
+  margin-bottom: 8px;
+}
+.recipe-box-cards {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 28px 8px 0;
+  min-height: 160px;
+  align-items: flex-end;
+}
+.box-card {
+  background: linear-gradient(180deg, #FFFEF9 0%, #FFF8EC 100%);
+  border-radius: 10px 10px 2px 2px;
+  width: 88px;
+  padding: 10px 7px 10px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  box-shadow: 3px 3px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.9);
+  cursor: pointer;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s;
+  position: relative;
+}
+.box-card:hover {
+  transform: translateY(-36px) rotate(-1.5deg) scale(1.06);
+  box-shadow: 6px 20px 40px rgba(0,0,0,.5);
+  z-index: 20;
+}
+.box-card .bc-img .item-thumb { width:52px !important; height:52px !important; border-radius:10px !important; margin-bottom:0; }
+.bc-name { font-size: 0.68rem; font-weight: 700; color: #1A0808; margin-top: 6px; line-height: 1.2; }
+.bc-days { font-size: 0.62rem; font-weight: 800; margin-top: 3px; }
+.recipe-box-body {
+  height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  padding-bottom: 10px;
+  margin-top: 6px;
+}
+.rbox-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(200,160,100,.6); }
+
+/* ── Wooden Shelf (pantry shelf view) ────────────────────── */
+.shelf-unit { margin-bottom: 20px; }
+.shelf-cat-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; padding-left: 4px; }
+.shelf-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 8px 12px 0;
+  background: linear-gradient(180deg, rgba(26,8,4,.25) 0%, transparent 60%);
+  min-height: 110px; align-items: flex-end;
+}
+.shelf-plank {
+  background: linear-gradient(180deg, #7A3A18 0%, #6B3010 20%, #7A3A18 50%, #5C2808 100%);
+  height: 14px; border-radius: 4px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.55), inset 0 2px 4px rgba(255,220,160,.15), inset 0 -2px 3px rgba(0,0,0,.4);
+  position: relative; overflow: hidden;
+}
+.shelf-plank::after {
+  content: '';
+  position: absolute; top: 4px; left: 0; right: 0; height: 1px;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent 40px, rgba(255,200,120,.08) 40px, rgba(255,200,120,.08) 80px);
+}
+.shelf-tile {
+  background: linear-gradient(180deg, #FFFEF9 0%, #FFF5E8 100%);
+  border-radius: 10px 10px 3px 3px;
+  border-top: 3px solid var(--top-color, #C0392B);
+  width: 82px; min-height: 100px;
+  padding: 9px 6px 8px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  box-shadow: 2px 6px 18px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.9);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  cursor: default;
+}
+.shelf-tile:hover { transform: translateY(-10px) rotate(1deg); }
+.shelf-tile .st-img .item-thumb { width:50px !important; height:50px !important; border-radius:9px !important; }
+.st-name { font-size: 0.65rem; font-weight: 700; color: #1A0808; margin-top: 5px; line-height: 1.2; }
+.st-days { font-size: 0.6rem; font-weight: 800; margin-top: 4px; padding: 2px 6px; border-radius: 99px; }
+.st-days.fresh   { background: #D5F5E3; color: #1A7040; }
+.st-days.soon    { background: #FDEBD0; color: #8A4010; }
+.st-days.low     { background: #FDEAEA; color: #8A1818; }
+.st-days.expired { background: #FDEAEA; color: #8A1818; }
+
 /* ── Recipe Cards ─────────────────────────────────────────── */
 .recipe-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 1.5rem; border: 1px solid var(--border); }
 .recipe-header { background: var(--grad); padding: 1.4rem 1.5rem; }

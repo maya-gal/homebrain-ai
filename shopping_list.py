@@ -30,7 +30,7 @@ def render(is_demo_mode: bool) -> None:
     demo_banner(is_demo_mode)
 
     # ── Auto-populate button ──────────────────────────────────
-    col_auto, col_clear = st.columns([2, 1])
+    col_auto, col_clear, col_wa = st.columns([2, 1, 1])
     with col_auto:
         if st.button("🔄  Pull from Running Low", use_container_width=True):
             added = auto_populate_shopping_list()
@@ -45,6 +45,21 @@ def render(is_demo_mode: bool) -> None:
             clear_bought()
             st.toast("Cleared bought items!", icon="✅")
             st.rerun()
+
+    with col_wa:
+        _pending_preview = [i for i in get_shopping_list() if not i["is_bought"]]
+        if _pending_preview:
+            wa_text = "🛒 רשימת קניות:\n" + "\n".join(
+                f"• {i['item_name']} ({i['quantity']})" for i in _pending_preview
+            )
+            import urllib.parse
+            wa_url = "https://wa.me/?text=" + urllib.parse.quote(wa_text)
+            st.markdown(
+                f'<a href="{wa_url}" target="_blank" style="display:block;text-align:center;'
+                f'background:#25D366;color:#fff;border-radius:8px;padding:8px 4px;font-weight:700;'
+                f'font-size:0.82rem;text-decoration:none;margin-top:2px">📲 WhatsApp</a>',
+                unsafe_allow_html=True,
+            )
 
     st.markdown("---")
 

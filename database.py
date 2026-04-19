@@ -132,6 +132,20 @@ def get_categories() -> list[str]:
     return [r["category"] for r in rows]
 
 
+def update_item(item_id: int, quantity: str = None, shelf_life_days: int = None) -> None:
+    parts, vals = [], []
+    if quantity is not None:
+        parts.append("quantity = ?"); vals.append(quantity)
+    if shelf_life_days is not None:
+        parts.append("shelf_life_days = ?"); vals.append(shelf_life_days)
+    if not parts:
+        return
+    vals.append(item_id)
+    with _conn() as conn:
+        conn.execute(f"UPDATE inventory SET {', '.join(parts)} WHERE id = ?", vals)
+        conn.commit()
+
+
 def delete_item(item_id: int, reason: str = "used") -> None:
     with _conn() as conn:
         row = conn.execute("SELECT product_name, category FROM inventory WHERE id=?", (item_id,)).fetchone()

@@ -9,7 +9,7 @@ import shopping_list as shopping_list_page
 from styles import get_css
 from database import (
     init_db, insert_items, get_all_items, search_items,
-    get_expiring_items, get_categories, get_stats, delete_item,
+    get_expiring_items, get_categories, get_stats, delete_item, update_item,
     add_to_shopping_list, get_smart_predictions, get_inventory_predictions,
     get_staple_list, add_staple, remove_staple, get_missing_staples,
 )
@@ -240,6 +240,79 @@ CATEGORY_ICONS = {
     "Personal Care":"🧴", "Other":        "📦",
 }
 
+_CAT_COLORS = {
+    "Produce": "#27AE60", "Dairy": "#2980B9", "Meat & Fish": "#C0392B",
+    "Bakery": "#E67E22", "Frozen": "#8E44AD", "Pantry": "#D35400",
+    "Beverages": "#16A085", "Snacks": "#E91E8C", "Household": "#7F8C8D",
+    "Personal Care": "#9B59B6", "Other": "#7D1F1F",
+}
+
+_SHELF_ORDER = ["Produce","Dairy","Meat & Fish","Bakery","Frozen",
+                "Pantry","Beverages","Snacks","Household","Personal Care","Other"]
+
+
+def _render_box_view(items: list, predictions: dict) -> None:
+    if not items:
+        return
+    cards_html = ""
+    for item in items:
+        color = _CAT_COLORS.get(item["category"], "#7D1F1F")
+        img = get_product_image(item["product_name"], item["category"])
+        days = item["days_remaining"]
+        days_label = "Expired" if days <= 0 else f"{days}d"
+        days_color = "#C0392B" if days <= 2 else ("#E67E22" if days <= 5 else "#27AE60")
+        name = item["product_name"][:10] + ("…" if len(item["product_name"]) > 10 else "")
+        cards_html += (
+            f'<div class="box-card" style="border-top:4px solid {color}">'
+            f'<div class="bc-img">{img}</div>'
+            f'<div class="bc-name">{name}</div>'
+            f'<div class="bc-days" style="color:{days_color}">{days_label}</div>'
+            f'</div>'
+        )
+    st.markdown(
+        f'<div class="recipe-box-wrap">'
+        f'<div class="recipe-box-cards">{cards_html}</div>'
+        f'<div class="recipe-box-body"><div class="rbox-label">📦 Pantry — {len(items)} items</div></div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_shelf_view(items: list, predictions: dict) -> None:
+    from collections import defaultdict
+    by_cat: dict = defaultdict(list)
+    for item in items:
+        by_cat[item["category"]].append(item)
+    for cat in _SHELF_ORDER:
+        cat_items = by_cat.get(cat, [])
+        if not cat_items:
+            continue
+        color = _CAT_COLORS.get(cat, "#7D1F1F")
+        emoji = CATEGORY_ICONS.get(cat, "📦")
+        tiles_html = ""
+        for item in cat_items:
+            img = get_product_image(item["product_name"], item["category"])
+            days = item["days_remaining"]
+            days_label = "Expired" if days <= 0 else f"{days}d"
+            days_cls = "expired" if days <= 0 else ("low" if days <= 2 else ("soon" if days <= 5 else "fresh"))
+            name = item["product_name"][:10] + ("…" if len(item["product_name"]) > 10 else "")
+            tiles_html += (
+                f'<div class="shelf-tile" style="--top-color:{color}">'
+                f'<div class="st-img">{img}</div>'
+                f'<div class="st-name">{name}</div>'
+                f'<div class="st-days {days_cls}">{days_label}</div>'
+                f'</div>'
+            )
+        st.markdown(
+            f'<div class="shelf-unit">'
+            f'<div class="shelf-cat-label" style="color:{color}">{emoji} {cat.upper()}</div>'
+            f'<div class="shelf-row">{tiles_html}</div>'
+            f'<div class="shelf-plank"></div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+
 def _product_emoji(product_name: str, category: str) -> str:
     name = product_name.lower().strip()
     if name in _PRODUCT_EMOJIS:
@@ -468,15 +541,48 @@ def page_mazava(user: str) -> None:
     in_stock_items  = [it for it in items if not _is_zero_qty(it["quantity"])]
     out_of_stock    = [it for it in items if _is_zero_qty(it["quantity"])]
 
-    # Fetch AI predictions for inline display
     predictions = get_inventory_predictions()
 
-    section_title(f"FOOD — {len(in_stock_items)} ITEMS")
-    cols = st.columns(3)
-    for i, item in enumerate(in_stock_items):
-        with cols[i % 3]:
-            pred = predictions.get(item["product_name"].lower(), "")
-            st.markdown(item_card_html(item, prediction=pred), unsafe_allow_html=True)
+    # ── View toggle ───────────────────────────────────────────
+    pv = st.session_state.get("pantry_view", "box")
+    c1, c2, _ = st.columns([1, 1, 5])
+    if c1.button("📦 Box", type="primary" if pv == "box" else "secondary", use_container_width=True):
+        st.session_state["pantry_view"] = "box"; st.rerun()
+    if c2.button("🪵 Shelf", type="primary" if pv == "shelf" else "secondary", use_container_width=True):
+        st.session_state["pantry_view"] = "shelf"; st.rerun()
+
+    st.markdown("<div style='margin-top:14px'></div>", unsafe_allow_html=True)
+
+    # ── Edit handler ──────────────────────────────────────────
+    edit_id = st.session_state.get("editing_item")
+    if edit_id:
+        item_to_edit = next((x for x in in_stock_items if x["id"] == edit_id), None)
+        if item_to_edit:
+            with st.form(f"edit_form_{edit_id}", clear_on_submit=True):
+                st.markdown(f"**✏️ Edit — {item_to_edit['product_name']}**")
+                ec1, ec2, ec3 = st.columns([2, 1, 1])
+                new_qty  = ec1.text_input("Quantity", value=item_to_edit["quantity"])
+                new_days = ec2.number_input("Shelf life (days)", value=int(item_to_edit["shelf_life_days"]), min_value=1, max_value=365)
+                ec3.markdown("<br>", unsafe_allow_html=True)
+                if ec3.form_submit_button("💾 Save", type="primary", use_container_width=True):
+                    update_item(edit_id, quantity=new_qty.strip(), shelf_life_days=int(new_days))
+                    st.session_state.pop("editing_item", None)
+                    st.toast("Updated!", icon="✅"); st.rerun()
+            if st.button("Cancel"):
+                st.session_state.pop("editing_item", None); st.rerun()
+
+    if pv == "box":
+        _render_box_view(in_stock_items, predictions)
+    else:
+        _render_shelf_view(in_stock_items, predictions)
+
+    # Edit buttons (one per item, rendered after HTML so keys are stable)
+    if pv == "box":
+        st.markdown("<div style='margin-top:6px'></div>", unsafe_allow_html=True)
+        edit_cols = st.columns(6)
+        for i, item in enumerate(in_stock_items[:6]):
+            if edit_cols[i % 6].button("✏️", key=f"edit_{item['id']}", help=f"Edit {item['product_name']}"):
+                st.session_state["editing_item"] = item["id"]; st.rerun()
 
     # ── Out of Stock ──────────────────────────────────────────
     if out_of_stock:
