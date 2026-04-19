@@ -90,7 +90,7 @@ def render(is_demo_mode: bool) -> None:
             <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;opacity:0.85;margin-bottom:4px">
                 ESTIMATED TOTAL
             </div>
-            <div style="font-size:1.6rem;font-weight:900">${total_est:.2f}</div>
+            <div style="font-size:1.6rem;font-weight:900">₪{total_est:.2f}</div>
             <div style="font-size:0.72rem;opacity:0.75;margin-top:2px">{len(pending)} items to buy</div>
         </div>
         {"" if not bought else f'''
@@ -98,7 +98,7 @@ def render(is_demo_mode: bool) -> None:
             <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;color:#64748B;margin-bottom:4px">
                 ALREADY BOUGHT
             </div>
-            <div style="font-size:1.6rem;font-weight:900;color:#0F172A">${bought_est:.2f}</div>
+            <div style="font-size:1.6rem;font-weight:900;color:#0F172A">₪{bought_est:.2f}</div>
             <div style="font-size:0.72rem;color:#94A3B8;margin-top:2px">{len(bought)} items</div>
         </div>'''}
     </div>
@@ -134,11 +134,11 @@ def _render_store_comparison(total_est: float) -> None:
         bg      = "#F0FDF4" if is_cheapest else "#FFFFFF"
         badge   = '<span style="background:#10B981;color:#fff;font-size:0.6rem;font-weight:700;border-radius:4px;padding:2px 5px;margin-left:4px">CHEAPEST</span>' if is_cheapest else ""
         saving_html = (
-            f'<div style="font-size:0.68rem;color:#10B981;font-weight:700;margin-top:2px">Save ${savings:.2f}</div>'
+            f'<div style="font-size:0.68rem;color:#10B981;font-weight:700;margin-top:2px">Save ₪{savings:.2f}</div>'
             if is_cheapest else
-            f'<div style="font-size:0.68rem;color:#94A3B8;margin-top:2px">+${price - cheapest_price:.2f} more</div>'
+            f'<div style="font-size:0.68rem;color:#94A3B8;margin-top:2px">+₪{price - cheapest_price:.2f} more</div>'
             if savings < 0 else
-            f'<div style="font-size:0.68rem;color:#94A3B8;margin-top:2px">Save ${savings:.2f}</div>'
+            f'<div style="font-size:0.68rem;color:#94A3B8;margin-top:2px">Save ₪{savings:.2f}</div>'
         )
         cards_html += f"""
         <div style="background:{bg};border:{border};border-radius:12px;padding:10px 14px;
@@ -146,7 +146,7 @@ def _render_store_comparison(total_est: float) -> None:
             <div style="font-size:0.78rem;font-weight:700;color:#1E1033;margin-bottom:3px">
                 {dot} {name}{badge}
             </div>
-            <div style="font-size:1.1rem;font-weight:900;color:{'#10B981' if is_cheapest else '#1E1033'}">${price:.2f}</div>
+            <div style="font-size:1.1rem;font-weight:900;color:{'#10B981' if is_cheapest else '#1E1033'}">₪{price:.2f}</div>
             {saving_html}
         </div>"""
 
@@ -174,7 +174,7 @@ def _render_item_row(item: dict, is_bought: bool, price: float = None) -> None:
     with col_info:
         opacity = "opacity:0.4;" if is_bought else ""
         price_html = (
-            f'<span style="font-size:0.78rem;color:#7C3AED;font-weight:700;margin-left:8px">~${price:.2f}</span>'
+            f'<span style="font-size:0.78rem;color:#7C3AED;font-weight:700;margin-left:8px">~₪{price:.2f}</span>'
             if price else ""
         )
         st.markdown(f"""

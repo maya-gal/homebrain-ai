@@ -84,7 +84,7 @@ def item_card_html(item: dict, prediction: str = "") -> str:
     top = f'<div class="item-card-top">{img_html}{name_div}{status_badge(item["status"])}</div>'
     bar = shelf_bar(item['days_remaining'], item['shelf_life_days'], item['status'])
     meta = f'<div class="item-meta">{category_badge(item["category"])} {user_badge(item["added_by"])}</div>'
-    del_btn = f'<a href="?delete={item["id"]}" class="card-del" title="Remove">✕</a>'
+    del_btn = f'<a href="?delete={item["id"]}" class="card-del" title="Remove" target="_self" onclick="event.preventDefault();window.location.search=\'?delete={item[\"id\"]}\'">✕</a>'
     return f'<div class="item-card">{del_btn}{top}{bar}{prediction_html}{meta}</div>'
 
 
